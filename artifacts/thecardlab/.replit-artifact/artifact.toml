@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "TheCardLab"
+version = "1.0.0"
+id = "artifacts/thecardlab"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22570
+
+[services.development]
+run = "pnpm --filter @workspace/thecardlab run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/thecardlab", "run", "build" ]
+publicDir = "artifacts/thecardlab/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22570"
+BASE_PATH = "/"

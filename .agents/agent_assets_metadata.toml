@@ -1,0 +1,32 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "zJ72uihWniTMPFdc4Yt8O"
+uri = "file://artifacts/thecardlab/src/assets/cards/wemby.png"
+type = "image"
+title = "Wembanyama Prizm Silver"
+
+[[generated]]
+id = "NmnnSrJPbOE7SvD27zewK"
+uri = "file://artifacts/thecardlab/src/assets/cards/herbert.png"
+type = "image"
+title = "Justin Herbert Prizm RC"
+
+[[generated]]
+id = "HbxZmZlB-RfZ9l_e2yShJ"
+uri = "file://artifacts/thecardlab/src/assets/cards/charizard.png"
+type = "image"
+title = "Vintage Charizard"
+
+[[generated]]
+id = "GrOB_Zff50Hs8D99qOFC1"
+uri = "file://artifacts/thecardlab/src/assets/cards/lawrence.png"
+type = "image"
+title = "Trevor Lawrence Select"
+
+[[generated]]
+id = "JbSB4JI3Hv-3ssFSo4mC4"
+uri = "file://artifacts/thecardlab/src/assets/cards/ohtani.png"
+type = "image"
+title = "Ohtani Update RC"
