@@ -15,6 +15,7 @@ import Vault from "@/pages/Vault";
 import Shows from "@/pages/Shows";
 import Restoration from "@/pages/Restoration";
 import MobileApp from "@/pages/MobileApp";
+import { ModalRoot } from "@/components/modals/ModalRoot";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <Router />
+          <ModalRoot />
         </WouterRouter>
         <Toaster />
         <Sonner theme="dark" position="bottom-center" />

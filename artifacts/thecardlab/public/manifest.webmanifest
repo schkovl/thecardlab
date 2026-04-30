@@ -1,0 +1,43 @@
+{
+  "name": "TheCardLab — AI Card Analytics",
+  "short_name": "TheCardLab",
+  "description": "AI-powered sports card research, grading, and portfolio management.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#050914",
+  "theme_color": "#050914",
+  "categories": ["finance", "productivity", "sports", "business"],
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Deal Screener",
+      "short_name": "Screener",
+      "description": "Analyze any marketplace listing",
+      "url": "/deal-screener",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Portfolio",
+      "short_name": "Portfolio",
+      "description": "View your holdings",
+      "url": "/portfolio",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Grade Lab",
+      "short_name": "Grade",
+      "description": "Visual grading analysis",
+      "url": "/grade-lab",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

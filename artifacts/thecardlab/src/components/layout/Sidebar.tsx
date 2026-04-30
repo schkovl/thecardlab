@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
-import { Home, ScanLine, FlaskConical, LayoutGrid, Activity, ShoppingCart, ShieldCheck, Calendar, Wrench, Smartphone, Bell, Search, Download } from "lucide-react";
+import { Home, ScanLine, FlaskConical, LayoutGrid, Activity, ShoppingCart, ShieldCheck, Calendar, Wrench, Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { openModal } from "@/lib/modal-bus";
 
 export function Sidebar() {
   const [location] = useLocation();
@@ -70,7 +70,13 @@ export function Sidebar() {
             </div>
             <div className="px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-[9px] font-black">ACTIVE</div>
           </div>
-          <button onClick={() => toast("Pricing Modal Opened")} className="w-full mt-2 py-1.5 text-xs font-bold border border-white/10 rounded-lg hover:bg-white/5 transition">Manage Subscription</button>
+          <button
+            onClick={() => openModal("pricing")}
+            data-testid="button-manage-subscription"
+            className="w-full mt-2 py-1.5 text-xs font-bold border border-white/10 rounded-lg hover:bg-white/5 transition"
+          >
+            Manage Subscription
+          </button>
         </div>
       </div>
     </aside>
