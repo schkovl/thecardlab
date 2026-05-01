@@ -44,21 +44,47 @@ Return ONLY valid JSON matching this exact schema — no markdown, no explanatio
   }
 }`;
 
+const ALLOWED_MARKETPLACE_HOSTS = new Set([
+  "ebay.com", "www.ebay.com",
+  "pwcc.com", "www.pwcc.com",
+  "goldin.co", "www.goldin.co",
+  "comc.com", "www.comc.com",
+  "myslabs.com", "www.myslabs.com",
+  "alt.com", "www.alt.com",
+  "scp-auctions.com", "www.scp-auctions.com",
+  "lelands.com", "www.lelands.com",
+]);
+
+function isAllowedListingUrl(urlString: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(urlString);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== "https:") return false;
+  const host = parsed.hostname.toLowerCase();
+  return ALLOWED_MARKETPLACE_HOSTS.has(host);
+}
+
 async function fetchListingTitle(url: string): Promise<string | null> {
+  if (!isAllowedListingUrl(url)) return null;
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(url, {
       signal: controller.signal,
+      redirect: "error",
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; TheCardLabBot/1.0; +https://thecardlab.com)",
+        "User-Agent": "TheCardLabBot/1.0",
       },
     });
     clearTimeout(timeout);
     if (!res.ok) return null;
+    const contentType = res.headers.get("content-type") ?? "";
+    if (!contentType.includes("text/html")) return null;
     const html = await res.text();
-    const match = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    const match = html.match(/<title[^>]*>([^<]{1,200})<\/title>/i);
     return match ? match[1].trim() : null;
   } catch {
     return null;
