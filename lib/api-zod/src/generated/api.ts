@@ -14,3 +14,82 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Returns all portfolio holdings for the authenticated user
+ * @summary List portfolio holdings
+ */
+export const ListPortfolioHoldingsResponseItem = zod.object({
+  id: zod.string(),
+  card: zod.string(),
+  grade: zod.string(),
+  cost: zod.number(),
+  value: zod.number(),
+  gain: zod.number(),
+  gainPct: zod.number(),
+  purchaseDate: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+export const ListPortfolioHoldingsResponse = zod.array(
+  ListPortfolioHoldingsResponseItem,
+);
+
+/**
+ * @summary Add a portfolio holding
+ */
+export const CreatePortfolioHoldingBody = zod.object({
+  card: zod.string(),
+  grade: zod.string(),
+  cost: zod.number(),
+  value: zod.number(),
+  purchaseDate: zod.string().optional(),
+});
+
+/**
+ * @summary Remove a portfolio holding
+ */
+export const DeletePortfolioHoldingParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
+ * Returns scan history for the authenticated user, newest first
+ * @summary List scan history
+ */
+export const ListScanResultsResponseItem = zod.object({
+  id: zod.string(),
+  cardName: zod.string(),
+  year: zod.string().nullish(),
+  setName: zod.string().nullish(),
+  parallel: zod.string().nullish(),
+  askingPrice: zod.number().nullish(),
+  shipping: zod.number().nullish(),
+  estValue: zod.number().nullish(),
+  estGrade: zod.string().nullish(),
+  gradeRange: zod.string().nullish(),
+  probability: zod.number().nullish(),
+  roi: zod.number().nullish(),
+  recommendedAction: zod.string().nullish(),
+  imageQualityScore: zod.number().nullish(),
+  createdAt: zod.string(),
+});
+export const ListScanResultsResponse = zod.array(ListScanResultsResponseItem);
+
+/**
+ * @summary Save a scan result
+ */
+export const CreateScanResultBody = zod.object({
+  cardName: zod.string(),
+  year: zod.string().optional(),
+  setName: zod.string().optional(),
+  parallel: zod.string().optional(),
+  askingPrice: zod.number().optional(),
+  shipping: zod.number().optional(),
+  estValue: zod.number().optional(),
+  estGrade: zod.string().optional(),
+  gradeRange: zod.string().optional(),
+  probability: zod.number().optional(),
+  roi: zod.number().optional(),
+  recommendedAction: zod.string().optional(),
+  imageQualityScore: zod.number().optional(),
+});

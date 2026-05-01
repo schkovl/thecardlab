@@ -2,14 +2,63 @@ import { Shell } from "@/components/layout/Shell";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { Pill } from "@/components/cards/Pill";
 import { useState } from "react";
-import { Search, Zap, AlertTriangle, CheckCircle2, AlertCircle } from "lucide-react";
+import { Search, Zap, AlertTriangle, AlertCircle, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import wembyImg from "@/assets/cards/wemby.png";
+import { useUser } from "@clerk/react";
+import {
+  useCreateScanResult,
+  useCreatePortfolioHolding,
+  useListScanResults,
+  getListScanResultsQueryKey,
+  getListPortfolioHoldingsQueryKey,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+
+type ScanData = {
+  card: string;
+  image: string;
+  askingPrice: number;
+  shipping: number;
+  estValue: number;
+  estGrade: string;
+  probability: number;
+  roi: number;
+  condition: Record<string, { score: number; status: string }>;
+  notes: string[];
+};
 
 export default function DealScreener() {
+  const { isSignedIn } = useUser();
+  const qc = useQueryClient();
+
   const [url, setUrl] = useState("");
   const [isScanning, setIsScanning] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ScanData | null>(null);
+  const [addedToPortfolio, setAddedToPortfolio] = useState(false);
+
+  const { data: scanHistory = [] } = useListScanResults({
+    query: { enabled: !!isSignedIn, queryKey: getListScanResultsQueryKey() },
+  });
+
+  const saveScanMutation = useCreateScanResult({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getListScanResultsQueryKey() });
+      },
+    },
+  });
+
+  const addToPortfolioMutation = useCreatePortfolioHolding({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
+        toast.success("Added to portfolio");
+        setAddedToPortfolio(true);
+      },
+      onError: () => toast.error("Failed to add to portfolio"),
+    },
+  });
 
   const handleScan = (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,13 +66,13 @@ export default function DealScreener() {
       toast.error("Please enter a URL");
       return;
     }
-    
+
     setIsScanning(true);
     setResult(null);
-    
+    setAddedToPortfolio(false);
+
     setTimeout(() => {
-      setIsScanning(false);
-      setResult({
+      const scanResult: ScanData = {
         card: "2023 Prizm Victor Wembanyama Silver",
         image: wembyImg,
         askingPrice: 1500,
@@ -43,9 +92,42 @@ export default function DealScreener() {
           "Surface appears clean, typical Prizm dimple near bottom border",
           "Bottom right corner shows minor whitening under magnification"
         ]
-      });
+      };
+
+      setIsScanning(false);
+      setResult(scanResult);
       toast.success("Scan complete");
+
+      if (isSignedIn) {
+        saveScanMutation.mutate({
+          data: {
+            cardName: scanResult.card,
+            askingPrice: scanResult.askingPrice,
+            shipping: scanResult.shipping,
+            estValue: scanResult.estValue,
+            estGrade: scanResult.estGrade,
+            probability: scanResult.probability,
+            roi: scanResult.roi,
+          },
+        });
+      }
     }, 1800);
+  };
+
+  const handleAddToPortfolio = () => {
+    if (!result) return;
+    if (!isSignedIn) {
+      toast.error("Sign in to add to your portfolio");
+      return;
+    }
+    addToPortfolioMutation.mutate({
+      data: {
+        card: result.card,
+        grade: result.estGrade,
+        cost: result.askingPrice + result.shipping,
+        value: result.estValue,
+      },
+    });
   };
 
   return (
@@ -64,18 +146,18 @@ export default function DealScreener() {
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Listing URL</label>
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="Paste eBay, PWCC, or Goldin URL..." 
+                placeholder="Paste eBay, PWCC, or Goldin URL..."
                 className="w-full h-12 bg-white/5 border border-border rounded-xl pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
               />
             </div>
           </div>
           <div className="flex items-end">
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isScanning}
               className="h-12 px-8 rounded-xl bg-gradient-to-br from-primary to-[#00bcd4] text-[#03111c] font-bold flex items-center gap-2 shadow-[0_10px_30px_rgba(0,229,255,0.2)] hover:-translate-y-0.5 transition-transform disabled:opacity-50 disabled:hover:translate-y-0 w-full md:w-auto justify-center"
             >
@@ -90,7 +172,7 @@ export default function DealScreener() {
       </HoloCard>
 
       {result && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 mb-8">
           <div className="lg:col-span-1 space-y-6">
             <HoloCard className="flex flex-col items-center text-center p-6">
               <div className="w-48 h-64 rounded-xl overflow-hidden bg-muted/20 mb-6 shadow-2xl relative group">
@@ -105,10 +187,23 @@ export default function DealScreener() {
                 <div>Shipping: <span className="font-bold text-foreground">${result.shipping}</span></div>
               </div>
               <div className="w-full space-y-3">
-                <button onClick={() => toast.success("Added to portfolio")} className="w-full h-11 rounded-xl bg-gradient-to-br from-primary to-secondary text-[#03111c] font-bold flex items-center justify-center gap-2">
-                  Add to Portfolio
+                <button
+                  onClick={handleAddToPortfolio}
+                  disabled={addToPortfolioMutation.isPending || addedToPortfolio}
+                  className="w-full h-11 rounded-xl bg-gradient-to-br from-primary to-secondary text-[#03111c] font-bold flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {addToPortfolioMutation.isPending ? (
+                    <><Loader2 size={16} className="animate-spin" /> Adding...</>
+                  ) : addedToPortfolio ? (
+                    "✓ Added to Portfolio"
+                  ) : (
+                    "Add to Portfolio"
+                  )}
                 </button>
-                <button onClick={() => toast.success("Alert created")} className="w-full h-11 rounded-xl bg-white/5 border border-border text-foreground font-bold hover:bg-white/10 transition-colors">
+                <button
+                  onClick={() => toast.success("Alert created")}
+                  className="w-full h-11 rounded-xl bg-white/5 border border-border text-foreground font-bold hover:bg-white/10 transition-colors"
+                >
                   Watch for Price Drop
                 </button>
               </div>
@@ -142,15 +237,15 @@ export default function DealScreener() {
             <HoloCard>
               <h3 className="text-sm font-black uppercase tracking-wider mb-6">Condition Analysis</h3>
               <div className="space-y-5">
-                {Object.entries(result.condition).map(([key, data]: [string, any]) => (
+                {Object.entries(result.condition).map(([key, data]) => (
                   <div key={key}>
                     <div className="flex justify-between text-sm mb-2">
                       <span className="capitalize font-bold">{key}</span>
                       <span className="text-muted-foreground">{data.score}/10 • {data.status}</span>
                     </div>
                     <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-primary to-secondary rounded-full" 
+                      <div
+                        className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
                         style={{ width: `${(data.score / 10) * 100}%` }}
                       />
                     </div>
@@ -164,7 +259,7 @@ export default function DealScreener() {
                 <AlertTriangle size={16} className="text-accent" /> AI Analyst Notes
               </h3>
               <ul className="space-y-3">
-                {result.notes.map((note: string, i: number) => (
+                {result.notes.map((note, i) => (
                   <li key={i} className="flex items-start gap-3 text-sm">
                     <AlertCircle size={16} className="text-muted-foreground shrink-0 mt-0.5" />
                     <span className="text-foreground/90">{note}</span>
@@ -173,6 +268,53 @@ export default function DealScreener() {
               </ul>
             </HoloCard>
           </div>
+        </div>
+      )}
+
+      {/* Scan History */}
+      {isSignedIn && scanHistory.length > 0 && (
+        <div>
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <Clock size={18} className="text-primary" /> Scan History
+          </h2>
+          <HoloCard className="p-0 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px] text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-white/5">
+                    <th className="text-left font-black text-xs text-muted-foreground uppercase tracking-wider py-3 px-4">Card</th>
+                    <th className="text-left font-black text-xs text-muted-foreground uppercase tracking-wider py-3 px-4">Grade</th>
+                    <th className="text-right font-black text-xs text-muted-foreground uppercase tracking-wider py-3 px-4">Est. Value</th>
+                    <th className="text-right font-black text-xs text-muted-foreground uppercase tracking-wider py-3 px-4">ROI</th>
+                    <th className="text-right font-black text-xs text-muted-foreground uppercase tracking-wider py-3 px-4">Scanned</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {scanHistory.map((scan) => (
+                    <tr key={scan.id} className="hover:bg-white/5 transition-colors">
+                      <td className="py-3 px-4 font-medium">{scan.cardName}</td>
+                      <td className="py-3 px-4">
+                        {scan.estGrade ? (
+                          <Pill variant={scan.estGrade.includes('10') ? 'teal' : 'cyan'}>{scan.estGrade}</Pill>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right font-bold">
+                        {scan.estValue ? `$${scan.estValue.toLocaleString()}` : "—"}
+                      </td>
+                      <td className="py-3 px-4 text-right text-secondary font-bold">
+                        {scan.roi != null ? `+${scan.roi}%` : "—"}
+                      </td>
+                      <td className="py-3 px-4 text-right text-muted-foreground text-xs">
+                        {new Date(scan.createdAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </HoloCard>
         </div>
       )}
     </Shell>

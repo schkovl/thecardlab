@@ -6,4 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./createPortfolioHolding";
+export * from "./createScanResult";
+export * from "./errorResponse";
 export * from "./healthStatus";
+export * from "./portfolioHolding";
+export * from "./scanResult";

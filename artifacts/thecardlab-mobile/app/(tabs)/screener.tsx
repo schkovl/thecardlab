@@ -7,13 +7,22 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Platform,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useColors } from "@/hooks/useColors";
 import { Pill, PrimaryButton, GhostButton, SectionHeader, ProgressBar } from "@/components/ui";
+import { useAuth } from "@clerk/expo";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useCreateScanResult,
+  useCreatePortfolioHolding,
+  useListScanResults,
+  getListScanResultsQueryKey,
+  getListPortfolioHoldingsQueryKey,
+} from "@workspace/api-client-react";
 
 const DEMO_RESULT = {
   player: "Victor Wembanyama",
@@ -33,24 +42,67 @@ const DEMO_RESULT = {
 export default function ScreenerScreen() {
   const c = useColors();
   const insets = useSafeAreaInsets();
+  const { isSignedIn } = useAuth();
+  const qc = useQueryClient();
 
   const [url, setUrl] = useState("");
   const [askingPrice, setAskingPrice] = useState("");
   const [shipping, setShipping] = useState("4.99");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<typeof DEMO_RESULT | null>(null);
+  const [addedToPortfolio, setAddedToPortfolio] = useState(false);
 
-  const analyze = () => {
-    if (!url.trim() && !askingPrice.trim()) {
+  const { data: scanHistory = [] } = useListScanResults({
+    query: { enabled: !!isSignedIn, queryKey: getListScanResultsQueryKey() },
+  });
+
+  const saveScanMutation = useCreateScanResult({
+    mutation: {
+      onSuccess: () => qc.invalidateQueries({ queryKey: getListScanResultsQueryKey() }),
+    },
+  });
+
+  const addToPortfolioMutation = useCreatePortfolioHolding({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
+        setAddedToPortfolio(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      },
+      onError: () => Alert.alert("Error", "Failed to add to portfolio"),
+    },
+  });
+
+  const analyze = (demoMode = false) => {
+    if (!demoMode && !url.trim() && !askingPrice.trim()) {
       loadDemo();
       return;
     }
     setLoading(true);
     setResult(null);
+    setAddedToPortfolio(false);
     setTimeout(() => {
       setLoading(false);
       setResult(DEMO_RESULT);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      if (isSignedIn) {
+        saveScanMutation.mutate({
+          data: {
+            cardName: `${DEMO_RESULT.year} ${DEMO_RESULT.set} ${DEMO_RESULT.player} ${DEMO_RESULT.parallel}`,
+            year: DEMO_RESULT.year,
+            setName: DEMO_RESULT.set,
+            parallel: DEMO_RESULT.parallel,
+            askingPrice: askingPrice ? parseFloat(askingPrice) : undefined,
+            shipping: shipping ? parseFloat(shipping) : undefined,
+            gradeRange: DEMO_RESULT.estimated_grade_range,
+            probability: DEMO_RESULT.confidence_score,
+            roi: DEMO_RESULT.expected_roi,
+            recommendedAction: DEMO_RESULT.recommended_action,
+            imageQualityScore: DEMO_RESULT.image_quality_score,
+          },
+        });
+      }
     }, 1800);
   };
 
@@ -58,7 +110,23 @@ export default function ScreenerScreen() {
     setUrl("https://www.ebay.com/itm/4058923412");
     setAskingPrice("38");
     setShipping("4.99");
-    setTimeout(analyze, 300);
+    setTimeout(() => analyze(true), 300);
+  };
+
+  const handleAddToPortfolio = () => {
+    if (!result) return;
+    if (!isSignedIn) {
+      Alert.alert("Sign In", "Sign in to add cards to your portfolio");
+      return;
+    }
+    addToPortfolioMutation.mutate({
+      data: {
+        card: `${result.year} ${result.set} ${result.player} ${result.parallel}`,
+        grade: result.estimated_grade_range,
+        cost: askingPrice ? Math.round(parseFloat(askingPrice) + parseFloat(shipping || "0")) : 0,
+        value: result.market_comps.psa_9[1],
+      },
+    });
   };
 
   const actionPill = (action: string) => {
@@ -119,7 +187,7 @@ export default function ScreenerScreen() {
             </View>
           </View>
 
-          <PrimaryButton label={loading ? "Analyzing…" : "Analyze with AI"} onPress={analyze} loading={loading} />
+          <PrimaryButton label={loading ? "Analyzing…" : "Analyze with AI"} onPress={() => analyze()} loading={loading} />
 
           <TouchableOpacity onPress={loadDemo} style={styles.demoBtn}>
             <Feather name="play-circle" size={14} color={c.primary} />
@@ -128,7 +196,7 @@ export default function ScreenerScreen() {
         </View>
 
         {loading && (
-          <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border, alignItems: "center", paddingVertical: 32 }]}>
+          <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border, alignItems: "center", paddingVertical: 32, marginTop: 12 }]}>
             <ActivityIndicator color={c.primary} size="large" />
             <Text style={[styles.loadingText, { color: c.text }]}>Analyzing with Vision Model v4.2</Text>
             <Text style={[styles.loadingSub, { color: c.mutedForeground }]}>Detecting edges • Centering • Surface • Image quality</Text>
@@ -175,9 +243,34 @@ export default function ScreenerScreen() {
             </View>
 
             <View style={[styles.actionsRow, { marginTop: 20 }]}>
-              <PrimaryButton label="Add to Portfolio" onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)} />
+              <PrimaryButton
+                label={addToPortfolioMutation.isPending ? "Adding…" : addedToPortfolio ? "✓ Added" : "Add to Portfolio"}
+                onPress={handleAddToPortfolio}
+                loading={addToPortfolioMutation.isPending}
+              />
               <GhostButton label="Watch Price" onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)} />
             </View>
+          </View>
+        )}
+
+        {/* Scan History */}
+        {isSignedIn && scanHistory.length > 0 && (
+          <View style={{ marginTop: 16 }}>
+            <SectionHeader title="Scan History" />
+            {scanHistory.slice(0, 5).map((scan) => (
+              <View key={scan.id} style={[styles.historyRow, { backgroundColor: c.surface, borderColor: c.border }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.historyCard, { color: c.text }]} numberOfLines={1}>{scan.cardName}</Text>
+                  <Text style={[styles.historySub, { color: c.mutedForeground }]}>
+                    {new Date(scan.createdAt).toLocaleDateString()}
+                    {scan.gradeRange ? ` · ${scan.gradeRange}` : ""}
+                  </Text>
+                </View>
+                {scan.roi != null && (
+                  <Text style={[styles.historyRoi, { color: c.secondary }]}>+{scan.roi}%</Text>
+                )}
+              </View>
+            ))}
           </View>
         )}
       </ScrollView>
@@ -195,7 +288,7 @@ function Stat({ label, value, sub, color }: { label: string; value: string; sub:
   );
 }
 
-function CompRow({ label, min, max, c }: { label: string; min: number; max: number; c: any }) {
+function CompRow({ label, min, max, c }: { label: string; min: number; max: number; c: ReturnType<typeof useColors> }) {
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 }}>
       <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{label}</Text>
@@ -206,24 +299,13 @@ function CompRow({ label, min, max, c }: { label: string; min: number; max: numb
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-  },
+  header: { paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: 1 },
   title: { fontSize: 28, fontWeight: "900", letterSpacing: -1 },
   eyebrow: { fontSize: 10, fontWeight: "900", letterSpacing: 1.5, marginTop: 2 },
   scroll: { padding: 16 },
   card: { borderRadius: 18, borderWidth: 1, padding: 16 },
   inputLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 0.3, marginBottom: 6 },
-  input: {
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    marginBottom: 12,
-  },
+  input: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, marginBottom: 12 },
   row: { flexDirection: "row", gap: 10 },
   demoBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 12 },
   demoBtnText: { fontSize: 12, fontWeight: "700" },
@@ -239,4 +321,8 @@ const styles = StyleSheet.create({
   condVal: { fontSize: 12, fontWeight: "700", width: 28, textAlign: "right" },
   compsGrid: { borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.05)", paddingTop: 8 },
   actionsRow: { gap: 10 },
+  historyRow: { flexDirection: "row", alignItems: "center", borderRadius: 14, borderWidth: 1, padding: 12, marginBottom: 8 },
+  historyCard: { fontSize: 13, fontWeight: "700" },
+  historySub: { fontSize: 11, marginTop: 2 },
+  historyRoi: { fontSize: 14, fontWeight: "800" },
 });

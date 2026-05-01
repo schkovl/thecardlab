@@ -8,3 +8,61 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface ErrorResponse {
+  error: string;
+}
+
+export interface PortfolioHolding {
+  id: string;
+  card: string;
+  grade: string;
+  cost: number;
+  value: number;
+  gain: number;
+  gainPct: number;
+  purchaseDate?: string | null;
+  createdAt: string;
+}
+
+export interface CreatePortfolioHolding {
+  card: string;
+  grade: string;
+  cost: number;
+  value: number;
+  purchaseDate?: string;
+}
+
+export interface ScanResult {
+  id: string;
+  cardName: string;
+  year?: string | null;
+  setName?: string | null;
+  parallel?: string | null;
+  askingPrice?: number | null;
+  shipping?: number | null;
+  estValue?: number | null;
+  estGrade?: string | null;
+  gradeRange?: string | null;
+  probability?: number | null;
+  roi?: number | null;
+  recommendedAction?: string | null;
+  imageQualityScore?: number | null;
+  createdAt: string;
+}
+
+export interface CreateScanResult {
+  cardName: string;
+  year?: string;
+  setName?: string;
+  parallel?: string;
+  askingPrice?: number;
+  shipping?: number;
+  estValue?: number;
+  estGrade?: string;
+  gradeRange?: string;
+  probability?: number;
+  roi?: number;
+  recommendedAction?: string;
+  imageQualityScore?: number;
+}

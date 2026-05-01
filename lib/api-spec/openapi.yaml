@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: portfolio
+    description: Portfolio holdings management
+  - name: scans
+    description: Scan history
 paths:
   /healthz:
     get:
@@ -24,6 +28,124 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /portfolio:
+    get:
+      operationId: listPortfolioHoldings
+      tags: [portfolio]
+      summary: List portfolio holdings
+      description: Returns all portfolio holdings for the authenticated user
+      responses:
+        "200":
+          description: List of holdings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortfolioHolding"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createPortfolioHolding
+      tags: [portfolio]
+      summary: Add a portfolio holding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePortfolioHolding"
+      responses:
+        "201":
+          description: Created holding
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioHolding"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /portfolio/{id}:
+    delete:
+      operationId: deletePortfolioHolding
+      tags: [portfolio]
+      summary: Remove a portfolio holding
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /scans:
+    get:
+      operationId: listScanResults
+      tags: [scans]
+      summary: List scan history
+      description: Returns scan history for the authenticated user, newest first
+      responses:
+        "200":
+          description: List of scan results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScanResult"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createScanResult
+      tags: [scans]
+      summary: Save a scan result
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateScanResult"
+      responses:
+        "201":
+          description: Saved scan result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanResult"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +156,143 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    PortfolioHolding:
+      type: object
+      properties:
+        id:
+          type: string
+        card:
+          type: string
+        grade:
+          type: string
+        cost:
+          type: integer
+        value:
+          type: integer
+        gain:
+          type: integer
+        gainPct:
+          type: number
+        purchaseDate:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - card
+        - grade
+        - cost
+        - value
+        - gain
+        - gainPct
+        - createdAt
+
+    CreatePortfolioHolding:
+      type: object
+      properties:
+        card:
+          type: string
+        grade:
+          type: string
+        cost:
+          type: integer
+        value:
+          type: integer
+        purchaseDate:
+          type: string
+      required:
+        - card
+        - grade
+        - cost
+        - value
+
+    ScanResult:
+      type: object
+      properties:
+        id:
+          type: string
+        cardName:
+          type: string
+        year:
+          type: string
+          nullable: true
+        setName:
+          type: string
+          nullable: true
+        parallel:
+          type: string
+          nullable: true
+        askingPrice:
+          type: number
+          nullable: true
+        shipping:
+          type: number
+          nullable: true
+        estValue:
+          type: integer
+          nullable: true
+        estGrade:
+          type: string
+          nullable: true
+        gradeRange:
+          type: string
+          nullable: true
+        probability:
+          type: integer
+          nullable: true
+        roi:
+          type: number
+          nullable: true
+        recommendedAction:
+          type: string
+          nullable: true
+        imageQualityScore:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - cardName
+        - createdAt
+
+    CreateScanResult:
+      type: object
+      properties:
+        cardName:
+          type: string
+        year:
+          type: string
+        setName:
+          type: string
+        parallel:
+          type: string
+        askingPrice:
+          type: number
+        shipping:
+          type: number
+        estValue:
+          type: integer
+        estGrade:
+          type: string
+        gradeRange:
+          type: string
+        probability:
+          type: integer
+        roi:
+          type: number
+        recommendedAction:
+          type: string
+        imageQualityScore:
+          type: integer
+      required:
+        - cardName
