@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "TheCardLab",
+    "slug": "thecardlab-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "thecardlab",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#050914"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.thecardlab.app"
+    },
+    "android": {
+      "package": "com.thecardlab.app"
+    },
+    "web": {
+      "favicon": "./assets/images/icon.png"
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": "https://replit.com/"
+        }
+      ],
+      "expo-font",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
