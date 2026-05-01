@@ -16,4 +16,5 @@ export * from "./errorResponse";
 export * from "./healthStatus";
 export * from "./marketComps";
 export * from "./portfolioHolding";
+export * from "./portfolioSnapshot";
 export * from "./scanResult";

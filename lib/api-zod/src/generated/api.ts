@@ -53,6 +53,22 @@ export const DeletePortfolioHoldingParams = zod.object({
 });
 
 /**
+ * Returns daily portfolio value snapshots for the authenticated user. Creates a snapshot for today on demand if missing.
+ * @summary Get portfolio value history
+ */
+export const GetPortfolioHistoryResponseItem = zod.object({
+  id: zod.string(),
+  snapshotDate: zod.string().describe("ISO date string e.g. 2026-05-01"),
+  totalValue: zod
+    .number()
+    .describe("Total portfolio value in USD at time of snapshot"),
+  createdAt: zod.string(),
+});
+export const GetPortfolioHistoryResponse = zod.array(
+  GetPortfolioHistoryResponseItem,
+);
+
+/**
  * Returns scan history for the authenticated user, newest first
  * @summary List scan history
  */

@@ -105,3 +105,12 @@ export interface AnalysisResult {
   notes: string[];
   marketComps: MarketComps;
 }
+
+export interface PortfolioSnapshot {
+  id: string;
+  /** ISO date string e.g. 2026-05-01 */
+  snapshotDate: string;
+  /** Total portfolio value in USD at time of snapshot */
+  totalValue: number;
+  createdAt: string;
+}

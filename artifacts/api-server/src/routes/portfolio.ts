@@ -1,8 +1,8 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
-import { db, portfolioHoldingsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
-import { CreatePortfolioHoldingBody, ListPortfolioHoldingsResponseItem } from "@workspace/api-zod";
+import { db, portfolioHoldingsTable, portfolioSnapshotsTable } from "@workspace/db";
+import { eq, and, asc } from "drizzle-orm";
+import { CreatePortfolioHoldingBody, ListPortfolioHoldingsResponseItem, GetPortfolioHistoryResponse } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -52,6 +52,43 @@ router.post("/portfolio", requireAuth, async (req, res) => {
     .returning();
 
   res.status(201).json(toResponse(row));
+});
+
+router.get("/portfolio/history", requireAuth, async (req, res) => {
+  const { userId } = getAuth(req);
+
+  const holdings = await db
+    .select()
+    .from(portfolioHoldingsTable)
+    .where(eq(portfolioHoldingsTable.clerkUserId, userId!));
+
+  const totalValue = holdings.reduce((sum, h) => sum + h.value, 0);
+  const today = new Date().toISOString().split("T")[0];
+
+  await db
+    .insert(portfolioSnapshotsTable)
+    .values({ clerkUserId: userId!, totalValue, snapshotDate: today })
+    .onConflictDoUpdate({
+      target: [portfolioSnapshotsTable.clerkUserId, portfolioSnapshotsTable.snapshotDate],
+      set: { totalValue },
+    });
+
+  const rows = await db
+    .select()
+    .from(portfolioSnapshotsTable)
+    .where(eq(portfolioSnapshotsTable.clerkUserId, userId!))
+    .orderBy(asc(portfolioSnapshotsTable.snapshotDate));
+
+  res.json(
+    GetPortfolioHistoryResponse.parse(
+      rows.map((r) => ({
+        id: r.id,
+        snapshotDate: r.snapshotDate,
+        totalValue: r.totalValue,
+        createdAt: r.createdAt.toISOString(),
+      }))
+    )
+  );
 });
 
 router.delete("/portfolio/:id", requireAuth, async (req, res) => {

@@ -101,6 +101,28 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /portfolio/history:
+    get:
+      operationId: getPortfolioHistory
+      tags: [portfolio]
+      summary: Get portfolio value history
+      description: Returns daily portfolio value snapshots for the authenticated user. Creates a snapshot for today on demand if missing.
+      responses:
+        "200":
+          description: List of daily value snapshots ordered by date ascending
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortfolioSnapshot"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /scans:
     get:
       operationId: listScanResults
@@ -433,3 +455,22 @@ components:
         - condition
         - notes
         - marketComps
+
+    PortfolioSnapshot:
+      type: object
+      properties:
+        id:
+          type: string
+        snapshotDate:
+          type: string
+          description: ISO date string e.g. 2026-05-01
+        totalValue:
+          type: integer
+          description: Total portfolio value in USD at time of snapshot
+        createdAt:
+          type: string
+      required:
+        - id
+        - snapshotDate
+        - totalValue
+        - createdAt

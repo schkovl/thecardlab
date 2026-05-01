@@ -24,6 +24,7 @@ import type {
   ErrorResponse,
   HealthStatus,
   PortfolioHolding,
+  PortfolioSnapshot,
   ScanResult,
 } from "./api.schemas";
 
@@ -358,6 +359,82 @@ export const useDeletePortfolioHolding = <
 > => {
   return useMutation(getDeletePortfolioHoldingMutationOptions(options));
 };
+
+/**
+ * Returns daily portfolio value snapshots for the authenticated user. Creates a snapshot for today on demand if missing.
+ * @summary Get portfolio value history
+ */
+export const getGetPortfolioHistoryUrl = () => {
+  return `/api/portfolio/history`;
+};
+
+export const getPortfolioHistory = async (
+  options?: RequestInit,
+): Promise<PortfolioSnapshot[]> => {
+  return customFetch<PortfolioSnapshot[]>(getGetPortfolioHistoryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPortfolioHistoryQueryKey = () => {
+  return [`/api/portfolio/history`] as const;
+};
+
+export const getGetPortfolioHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPortfolioHistory>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolioHistory>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPortfolioHistoryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPortfolioHistory>>
+  > = ({ signal }) => getPortfolioHistory({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolioHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPortfolioHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPortfolioHistory>>
+>;
+export type GetPortfolioHistoryQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get portfolio value history
+ */
+
+export function useGetPortfolioHistory<
+  TData = Awaited<ReturnType<typeof getPortfolioHistory>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolioHistory>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPortfolioHistoryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * Returns scan history for the authenticated user, newest first

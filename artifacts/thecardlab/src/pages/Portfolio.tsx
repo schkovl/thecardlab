@@ -11,9 +11,10 @@ import {
   useCreatePortfolioHolding,
   useDeletePortfolioHolding,
   getListPortfolioHoldingsQueryKey,
+  useGetPortfolioHistory,
+  getGetPortfolioHistoryQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { portfolioHistory } from "@/data/portfolio";
 
 const GRADES = ["Raw", "PSA 7", "PSA 8", "PSA 9", "PSA 10", "BGS 9", "BGS 9.5", "SGC 10"];
 
@@ -24,6 +25,12 @@ export default function Portfolio() {
   const { data: holdings = [], isLoading, error } = useListPortfolioHoldings({
     query: { enabled: isLoaded && !!isSignedIn, queryKey: getListPortfolioHoldingsQueryKey() },
   });
+
+  const { data: historySnapshots = [] } = useGetPortfolioHistory({
+    query: { enabled: isLoaded && !!isSignedIn, queryKey: getGetPortfolioHistoryQueryKey() },
+  });
+
+  const chartData = historySnapshots.map((s) => ({ date: s.snapshotDate, value: s.totalValue }));
 
   const createMutation = useCreatePortfolioHolding({
     mutation: {
@@ -183,7 +190,7 @@ export default function Portfolio() {
 
           <div className="h-[240px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={portfolioHistory} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+              <AreaChart data={chartData} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
