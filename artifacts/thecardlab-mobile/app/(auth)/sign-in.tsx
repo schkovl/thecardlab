@@ -14,6 +14,7 @@ import * as WebBrowser from "expo-web-browser";
 import * as AuthSession from "expo-auth-session";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -69,6 +70,7 @@ export default function SignInScreen() {
   useWarmUpBrowser();
   const insets = useSafeAreaInsets();
   const { startSSOFlow } = useSSO();
+  const router = useRouter();
   const [loadingStrategy, setLoadingStrategy] = React.useState<SSOStrategy | null>(null);
 
   const handleSSO = useCallback(
@@ -83,6 +85,7 @@ export default function SignInScreen() {
 
         if (createdSessionId) {
           await setActive!({ session: createdSessionId });
+          router.replace("/(tabs)");
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Authentication failed.";
@@ -91,7 +94,7 @@ export default function SignInScreen() {
         setLoadingStrategy(null);
       }
     },
-    [startSSOFlow, loadingStrategy],
+    [startSSOFlow, loadingStrategy, router],
   );
 
   return (
