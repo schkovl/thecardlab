@@ -31,7 +31,20 @@ export default function Portfolio() {
     query: { enabled: isLoaded && !!isSignedIn, queryKey: getGetPortfolioHistoryQueryKey() },
   });
 
-  const chartData = historySnapshots.map((s) => ({ date: s.snapshotDate, value: s.totalValue }));
+  const allChartData = historySnapshots.map((s) => ({ date: s.snapshotDate, value: s.totalValue }));
+
+  const [timeRange, setTimeRange] = useState<'1W' | '1M' | '3M' | 'YTD' | 'ALL'>('ALL');
+
+  const chartData = (() => {
+    if (timeRange === 'ALL') return allChartData;
+    const now = new Date();
+    const cutoff = new Date(now);
+    if (timeRange === '1W') cutoff.setDate(now.getDate() - 7);
+    else if (timeRange === '1M') cutoff.setMonth(now.getMonth() - 1);
+    else if (timeRange === '3M') cutoff.setMonth(now.getMonth() - 3);
+    else if (timeRange === 'YTD') cutoff.setMonth(0, 1);
+    return allChartData.filter((d) => new Date(d.date) >= cutoff);
+  })();
 
   const createMutation = useCreatePortfolioHolding({
     mutation: {
@@ -264,8 +277,12 @@ export default function Portfolio() {
               </div>
             </div>
             <div className="flex gap-2 bg-white/5 p-1 rounded-lg">
-              {['1W', '1M', '3M', 'YTD', 'ALL'].map((tf, i) => (
-                <button key={tf} className={`px-3 py-1 text-xs font-bold rounded-md ${i === 1 ? 'bg-white/10 text-white' : 'text-muted-foreground hover:text-white'}`}>
+              {(['1W', '1M', '3M', 'YTD', 'ALL'] as const).map((tf) => (
+                <button
+                  key={tf}
+                  onClick={() => setTimeRange(tf)}
+                  className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${timeRange === tf ? 'bg-white/10 text-white' : 'text-muted-foreground hover:text-white'}`}
+                >
                   {tf}
                 </button>
               ))}
