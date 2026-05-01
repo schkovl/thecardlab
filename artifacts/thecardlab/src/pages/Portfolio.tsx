@@ -36,6 +36,7 @@ export default function Portfolio() {
     mutation: {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetPortfolioHistoryQueryKey() });
         toast.success("Card added to portfolio");
         setShowAdd(false);
         setForm({ card: "", grade: "PSA 9", cost: "", value: "" });
@@ -48,6 +49,7 @@ export default function Portfolio() {
     mutation: {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetPortfolioHistoryQueryKey() });
         toast.success("Card removed from portfolio");
       },
       onError: () => toast.error("Failed to remove card"),
