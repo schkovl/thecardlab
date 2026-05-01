@@ -17,6 +17,8 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AnalysisResult,
+  AnalyzeListingRequest,
   CreatePortfolioHolding,
   CreateScanResult,
   ErrorResponse,
@@ -517,4 +519,91 @@ export const useCreateScanResult = <
   TContext
 > => {
   return useMutation(getCreateScanResultMutationOptions(options));
+};
+
+/**
+ * Uses AI to assess grading potential, condition, and ROI from a marketplace listing URL
+ * @summary Analyze a card listing with AI
+ */
+export const getAnalyzeListingUrl = () => {
+  return `/api/analyze-listing`;
+};
+
+export const analyzeListing = async (
+  analyzeListingRequest: AnalyzeListingRequest,
+  options?: RequestInit,
+): Promise<AnalysisResult> => {
+  return customFetch<AnalysisResult>(getAnalyzeListingUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(analyzeListingRequest),
+  });
+};
+
+export const getAnalyzeListingMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof analyzeListing>>,
+    TError,
+    { data: BodyType<AnalyzeListingRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof analyzeListing>>,
+  TError,
+  { data: BodyType<AnalyzeListingRequest> },
+  TContext
+> => {
+  const mutationKey = ["analyzeListing"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof analyzeListing>>,
+    { data: BodyType<AnalyzeListingRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return analyzeListing(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AnalyzeListingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof analyzeListing>>
+>;
+export type AnalyzeListingMutationBody = BodyType<AnalyzeListingRequest>;
+export type AnalyzeListingMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Analyze a card listing with AI
+ */
+export const useAnalyzeListing = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof analyzeListing>>,
+    TError,
+    { data: BodyType<AnalyzeListingRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof analyzeListing>>,
+  TError,
+  { data: BodyType<AnalyzeListingRequest> },
+  TContext
+> => {
+  return useMutation(getAnalyzeListingMutationOptions(options));
 };

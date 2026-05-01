@@ -17,6 +17,7 @@ import { Pill, PrimaryButton, GhostButton, SectionHeader, ProgressBar } from "@/
 import { useAuth } from "@clerk/expo";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  useAnalyzeListing,
   useCreateScanResult,
   useCreatePortfolioHolding,
   useListScanResults,
@@ -24,19 +25,23 @@ import {
   getListPortfolioHoldingsQueryKey,
 } from "@workspace/api-client-react";
 
-const DEMO_RESULT = {
-  player: "Victor Wembanyama",
-  year: "2023",
-  set: "Panini Prizm",
-  card_number: "136",
-  parallel: "Silver Prizm",
-  image_quality_score: 67,
-  condition_scores: { centering: 8.2, corners: 7.8, edges: 8.1, surface_visibility: 6.4 },
-  estimated_grade_range: "PSA 8–9",
-  confidence_score: 62,
-  market_comps: { raw: [35, 45], psa_8: [55, 70], psa_9: [95, 120], psa_10: [240, 310] },
-  expected_roi: 58,
-  recommended_action: "Manual Review",
+type AnalysisResult = {
+  cardName: string;
+  player: string;
+  year: string;
+  setName: string;
+  cardNumber: string;
+  parallel: string;
+  estGrade: string;
+  gradeRange: string;
+  probability: number;
+  estValue: number;
+  roi: number;
+  recommendedAction: string;
+  imageQualityScore: number;
+  condition: Record<string, { score: number; status: string }>;
+  notes: string[];
+  marketComps: { raw: number[]; psa8: number[]; psa9: number[]; psa10: number[] };
 };
 
 export default function ScreenerScreen() {
@@ -48,8 +53,7 @@ export default function ScreenerScreen() {
   const [url, setUrl] = useState("");
   const [askingPrice, setAskingPrice] = useState("");
   const [shipping, setShipping] = useState("4.99");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<typeof DEMO_RESULT | null>(null);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
   const [addedToPortfolio, setAddedToPortfolio] = useState(false);
 
   const { data: scanHistory = [] } = useListScanResults({
@@ -73,44 +77,62 @@ export default function ScreenerScreen() {
     },
   });
 
-  const analyze = (demoMode = false) => {
-    if (!demoMode && !url.trim() && !askingPrice.trim()) {
+  const analyzeListingMutation = useAnalyzeListing({
+    mutation: {
+      onSuccess: (data) => {
+        const r = data as AnalysisResult;
+        setResult(r);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        if (isSignedIn) {
+          saveScanMutation.mutate({
+            data: {
+              cardName: r.cardName,
+              year: r.year,
+              setName: r.setName,
+              parallel: r.parallel,
+              askingPrice: askingPrice ? parseFloat(askingPrice) : undefined,
+              shipping: shipping ? parseFloat(shipping) : undefined,
+              estValue: r.estValue,
+              estGrade: r.estGrade,
+              gradeRange: r.gradeRange,
+              probability: r.probability,
+              roi: r.roi,
+              recommendedAction: r.recommendedAction,
+              imageQualityScore: r.imageQualityScore,
+            },
+          });
+        }
+      },
+      onError: () => {
+        Alert.alert("Analysis Failed", "Could not analyze the listing. Check the URL and try again.");
+      },
+    },
+  });
+
+  const loading = analyzeListingMutation.isPending;
+
+  const analyze = () => {
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) {
       loadDemo();
       return;
     }
-    setLoading(true);
     setResult(null);
     setAddedToPortfolio(false);
-    setTimeout(() => {
-      setLoading(false);
-      setResult(DEMO_RESULT);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      if (isSignedIn) {
-        saveScanMutation.mutate({
-          data: {
-            cardName: `${DEMO_RESULT.year} ${DEMO_RESULT.set} ${DEMO_RESULT.player} ${DEMO_RESULT.parallel}`,
-            year: DEMO_RESULT.year,
-            setName: DEMO_RESULT.set,
-            parallel: DEMO_RESULT.parallel,
-            askingPrice: askingPrice ? parseFloat(askingPrice) : undefined,
-            shipping: shipping ? parseFloat(shipping) : undefined,
-            gradeRange: DEMO_RESULT.estimated_grade_range,
-            probability: DEMO_RESULT.confidence_score,
-            roi: DEMO_RESULT.expected_roi,
-            recommendedAction: DEMO_RESULT.recommended_action,
-            imageQualityScore: DEMO_RESULT.image_quality_score,
-          },
-        });
-      }
-    }, 1800);
+    analyzeListingMutation.mutate({
+      data: {
+        listingUrl: trimmedUrl,
+        askingPrice: askingPrice ? parseFloat(askingPrice) : undefined,
+        shipping: shipping ? parseFloat(shipping) : undefined,
+      },
+    });
   };
 
   const loadDemo = () => {
-    setUrl("https://www.ebay.com/itm/4058923412");
+    setUrl("https://www.ebay.com/itm/2023-Panini-Prizm-Victor-Wembanyama-Silver-Prizm-136/405892341286");
     setAskingPrice("38");
     setShipping("4.99");
-    setTimeout(() => analyze(true), 300);
   };
 
   const handleAddToPortfolio = () => {
@@ -121,10 +143,12 @@ export default function ScreenerScreen() {
     }
     addToPortfolioMutation.mutate({
       data: {
-        card: `${result.year} ${result.set} ${result.player} ${result.parallel}`,
-        grade: result.estimated_grade_range,
-        cost: askingPrice ? Math.round(parseFloat(askingPrice) + parseFloat(shipping || "0")) : 0,
-        value: result.market_comps.psa_9[1],
+        card: result.cardName,
+        grade: result.estGrade,
+        cost: askingPrice
+          ? Math.round(parseFloat(askingPrice) + parseFloat(shipping || "0"))
+          : result.estValue,
+        value: result.estValue,
       },
     });
   };
@@ -147,7 +171,6 @@ export default function ScreenerScreen() {
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 100 }]}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Input */}
         <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
           <SectionHeader title="Input Listing" />
 
@@ -187,7 +210,7 @@ export default function ScreenerScreen() {
             </View>
           </View>
 
-          <PrimaryButton label={loading ? "Analyzing…" : "Analyze with AI"} onPress={() => analyze()} loading={loading} />
+          <PrimaryButton label={loading ? "Analyzing…" : "Analyze with AI"} onPress={analyze} loading={loading} />
 
           <TouchableOpacity onPress={loadDemo} style={styles.demoBtn}>
             <Feather name="play-circle" size={14} color={c.primary} />
@@ -198,8 +221,8 @@ export default function ScreenerScreen() {
         {loading && (
           <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border, alignItems: "center", paddingVertical: 32, marginTop: 12 }]}>
             <ActivityIndicator color={c.primary} size="large" />
-            <Text style={[styles.loadingText, { color: c.text }]}>Analyzing with Vision Model v4.2</Text>
-            <Text style={[styles.loadingSub, { color: c.mutedForeground }]}>Detecting edges • Centering • Surface • Image quality</Text>
+            <Text style={[styles.loadingText, { color: c.text }]}>AI Analyzing Listing…</Text>
+            <Text style={[styles.loadingSub, { color: c.mutedForeground }]}>Detecting edges · Centering · Surface · Market comps</Text>
           </View>
         )}
 
@@ -209,25 +232,25 @@ export default function ScreenerScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[styles.resultPlayer, { color: c.text }]}>{result.player} {result.year}</Text>
                 <Text style={[styles.resultSet, { color: c.mutedForeground }]}>
-                  {result.set} #{result.card_number} • {result.parallel}
+                  {result.setName} #{result.cardNumber} · {result.parallel}
                 </Text>
               </View>
-              <Pill label={result.recommended_action} variant={actionPill(result.recommended_action) as any} />
+              <Pill label={result.recommendedAction} variant={actionPill(result.recommendedAction) as "teal" | "gold" | "red"} />
             </View>
 
             <View style={styles.statsRow}>
-              <Stat label="PSA RANGE" value={result.estimated_grade_range} sub={`${result.confidence_score}% conf.`} color={c.text} />
-              <Stat label="IMAGE QUALITY" value={`${result.image_quality_score}`} sub="/100" color={c.accent} />
-              <Stat label="EST. ROI" value={`+${result.expected_roi}%`} sub="if PSA 9" color={c.secondary} />
+              <Stat label="PSA RANGE" value={result.gradeRange} sub={`${result.probability}% conf.`} color={c.text} />
+              <Stat label="IMAGE QUALITY" value={`${result.imageQualityScore}`} sub="/100" color={c.accent} />
+              <Stat label="EST. ROI" value={`${result.roi >= 0 ? "+" : ""}${result.roi}%`} sub="post-grade" color={result.roi >= 0 ? c.secondary : "#f87171"} />
             </View>
 
             <View style={{ marginTop: 16 }}>
               <Text style={[styles.sectionMini, { color: c.label }]}>CONDITION RISK</Text>
-              {Object.entries(result.condition_scores).map(([k, v]) => (
+              {Object.entries(result.condition).map(([k, v]) => (
                 <View key={k} style={styles.condRow}>
-                  <Text style={[styles.condLabel, { color: c.mutedForeground }]}>{k.charAt(0).toUpperCase() + k.slice(1).replace("_", " ")}</Text>
-                  <ProgressBar value={v} max={10} color={v >= 8 ? c.secondary : v >= 7 ? c.accent : c.danger} />
-                  <Text style={[styles.condVal, { color: c.text }]}>{v}</Text>
+                  <Text style={[styles.condLabel, { color: c.mutedForeground }]}>{k.charAt(0).toUpperCase() + k.slice(1)}</Text>
+                  <ProgressBar value={v.score} max={10} color={v.score >= 8 ? c.secondary : v.score >= 7 ? c.accent : "#f87171"} />
+                  <Text style={[styles.condVal, { color: c.text }]}>{v.score}</Text>
                 </View>
               ))}
             </View>
@@ -235,12 +258,21 @@ export default function ScreenerScreen() {
             <View style={{ marginTop: 16 }}>
               <Text style={[styles.sectionMini, { color: c.label }]}>MARKET COMPS</Text>
               <View style={styles.compsGrid}>
-                <CompRow label="Raw" min={result.market_comps.raw[0]} max={result.market_comps.raw[1]} c={c} />
-                <CompRow label="PSA 8" min={result.market_comps.psa_8[0]} max={result.market_comps.psa_8[1]} c={c} />
-                <CompRow label="PSA 9" min={result.market_comps.psa_9[0]} max={result.market_comps.psa_9[1]} c={c} />
-                <CompRow label="PSA 10" min={result.market_comps.psa_10[0]} max={result.market_comps.psa_10[1]} c={c} />
+                <CompRow label="Raw" min={result.marketComps.raw[0]} max={result.marketComps.raw[1]} c={c} />
+                <CompRow label="PSA 8" min={result.marketComps.psa8[0]} max={result.marketComps.psa8[1]} c={c} />
+                <CompRow label="PSA 9" min={result.marketComps.psa9[0]} max={result.marketComps.psa9[1]} c={c} />
+                <CompRow label="PSA 10" min={result.marketComps.psa10[0]} max={result.marketComps.psa10[1]} c={c} />
               </View>
             </View>
+
+            {result.notes.length > 0 && (
+              <View style={{ marginTop: 16 }}>
+                <Text style={[styles.sectionMini, { color: c.label }]}>AI ANALYST NOTES</Text>
+                {result.notes.map((note, i) => (
+                  <Text key={i} style={[styles.noteText, { color: c.mutedForeground }]}>· {note}</Text>
+                ))}
+              </View>
+            )}
 
             <View style={[styles.actionsRow, { marginTop: 20 }]}>
               <PrimaryButton
@@ -253,7 +285,6 @@ export default function ScreenerScreen() {
           </View>
         )}
 
-        {/* Scan History */}
         {isSignedIn && scanHistory.length > 0 && (
           <View style={{ marginTop: 16 }}>
             <SectionHeader title="Scan History" />
@@ -282,7 +313,7 @@ function Stat({ label, value, sub, color }: { label: string; value: string; sub:
   return (
     <View style={{ alignItems: "center" }}>
       <Text style={{ color: "#64748b", fontSize: 9, fontWeight: "900", letterSpacing: 0.5 }}>{label}</Text>
-      <Text style={{ color, fontSize: 22, fontWeight: "900", letterSpacing: -0.5, marginTop: 2 }}>{value}</Text>
+      <Text style={{ color, fontSize: 18, fontWeight: "900", letterSpacing: -0.5, marginTop: 2 }}>{value}</Text>
       <Text style={{ color: "#64748b", fontSize: 10 }}>{sub}</Text>
     </View>
   );
@@ -325,4 +356,5 @@ const styles = StyleSheet.create({
   historyCard: { fontSize: 13, fontWeight: "700" },
   historySub: { fontSize: 11, marginTop: 2 },
   historyRoi: { fontSize: 14, fontWeight: "800" },
+  noteText: { fontSize: 12, marginBottom: 6, lineHeight: 18 },
 });

@@ -93,3 +93,43 @@ export const CreateScanResultBody = zod.object({
   recommendedAction: zod.string().optional(),
   imageQualityScore: zod.number().optional(),
 });
+
+/**
+ * Uses AI to assess grading potential, condition, and ROI from a marketplace listing URL
+ * @summary Analyze a card listing with AI
+ */
+export const AnalyzeListingBody = zod.object({
+  listingUrl: zod.string(),
+  askingPrice: zod.number().optional(),
+  shipping: zod.number().optional(),
+});
+
+export const AnalyzeListingResponse = zod.object({
+  cardName: zod.string(),
+  player: zod.string(),
+  year: zod.string(),
+  setName: zod.string(),
+  cardNumber: zod.string(),
+  parallel: zod.string(),
+  estGrade: zod.string(),
+  gradeRange: zod.string(),
+  probability: zod.number(),
+  estValue: zod.number(),
+  roi: zod.number(),
+  recommendedAction: zod.string(),
+  imageQualityScore: zod.number(),
+  condition: zod.record(
+    zod.string(),
+    zod.object({
+      score: zod.number(),
+      status: zod.string(),
+    }),
+  ),
+  notes: zod.array(zod.string()),
+  marketComps: zod.object({
+    raw: zod.array(zod.number()),
+    psa8: zod.array(zod.number()),
+    psa9: zod.array(zod.number()),
+    psa10: zod.array(zod.number()),
+  }),
+});

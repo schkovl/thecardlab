@@ -6,9 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./analysisResult";
+export * from "./analysisResultCondition";
+export * from "./analyzeListingRequest";
+export * from "./conditionDetail";
 export * from "./createPortfolioHolding";
 export * from "./createScanResult";
 export * from "./errorResponse";
 export * from "./healthStatus";
+export * from "./marketComps";
 export * from "./portfolioHolding";
 export * from "./scanResult";

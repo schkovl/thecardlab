@@ -66,3 +66,42 @@ export interface CreateScanResult {
   recommendedAction?: string;
   imageQualityScore?: number;
 }
+
+export interface AnalyzeListingRequest {
+  listingUrl: string;
+  askingPrice?: number;
+  shipping?: number;
+}
+
+export interface ConditionDetail {
+  score: number;
+  status: string;
+}
+
+export interface MarketComps {
+  raw: number[];
+  psa8: number[];
+  psa9: number[];
+  psa10: number[];
+}
+
+export type AnalysisResultCondition = { [key: string]: ConditionDetail };
+
+export interface AnalysisResult {
+  cardName: string;
+  player: string;
+  year: string;
+  setName: string;
+  cardNumber: string;
+  parallel: string;
+  estGrade: string;
+  gradeRange: string;
+  probability: number;
+  estValue: number;
+  roi: number;
+  recommendedAction: string;
+  imageQualityScore: number;
+  condition: AnalysisResultCondition;
+  notes: string[];
+  marketComps: MarketComps;
+}

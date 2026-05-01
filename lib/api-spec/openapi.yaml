@@ -13,7 +13,7 @@ tags:
   - name: portfolio
     description: Portfolio holdings management
   - name: scans
-    description: Scan history
+    description: Scan history and AI analysis
 paths:
   /healthz:
     get:
@@ -139,6 +139,38 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ScanResult"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analyze-listing:
+    post:
+      operationId: analyzeListing
+      tags: [scans]
+      summary: Analyze a card listing with AI
+      description: Uses AI to assess grading potential, condition, and ROI from a marketplace listing URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeListingRequest"
+      responses:
+        "200":
+          description: AI analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: Unauthorized
           content:
@@ -296,3 +328,108 @@ components:
           type: integer
       required:
         - cardName
+
+    AnalyzeListingRequest:
+      type: object
+      properties:
+        listingUrl:
+          type: string
+        askingPrice:
+          type: number
+        shipping:
+          type: number
+      required:
+        - listingUrl
+
+    ConditionDetail:
+      type: object
+      properties:
+        score:
+          type: number
+        status:
+          type: string
+      required:
+        - score
+        - status
+
+    MarketComps:
+      type: object
+      properties:
+        raw:
+          type: array
+          items:
+            type: number
+        psa8:
+          type: array
+          items:
+            type: number
+        psa9:
+          type: array
+          items:
+            type: number
+        psa10:
+          type: array
+          items:
+            type: number
+      required:
+        - raw
+        - psa8
+        - psa9
+        - psa10
+
+    AnalysisResult:
+      type: object
+      properties:
+        cardName:
+          type: string
+        player:
+          type: string
+        year:
+          type: string
+        setName:
+          type: string
+        cardNumber:
+          type: string
+        parallel:
+          type: string
+        estGrade:
+          type: string
+        gradeRange:
+          type: string
+        probability:
+          type: integer
+        estValue:
+          type: integer
+        roi:
+          type: number
+        recommendedAction:
+          type: string
+        imageQualityScore:
+          type: integer
+        condition:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ConditionDetail"
+        notes:
+          type: array
+          items:
+            type: string
+        marketComps:
+          $ref: "#/components/schemas/MarketComps"
+      required:
+        - cardName
+        - player
+        - year
+        - setName
+        - cardNumber
+        - parallel
+        - estGrade
+        - gradeRange
+        - probability
+        - estValue
+        - roi
+        - recommendedAction
+        - imageQualityScore
+        - condition
+        - notes
+        - marketComps
