@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Crown, Check, Loader2, ShieldCheck } from "lucide-react";
 import { startCheckout, type PlanId } from "@/lib/checkout";
+import { invalidateSubscriptionCache } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 
 type Props = {
@@ -33,6 +35,31 @@ const FEATURES = [
 export function PricingModal({ open, onOpenChange }: Props) {
   const [selected, setSelected] = useState<PlanId>("pro_annual");
   const [loading, setLoading] = useState(false);
+  const [location] = useLocation();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get("checkout");
+    if (checkout === "success") {
+      invalidateSubscriptionCache();
+      toast.success("Welcome to Pro!", {
+        description: "Your subscription is now active. Enjoy unlimited access.",
+        duration: 6000,
+      });
+      const url = new URL(window.location.href);
+      url.searchParams.delete("checkout");
+      window.history.replaceState({}, "", url.toString());
+    } else if (checkout === "cancelled") {
+      toast.info("Checkout cancelled", {
+        description: "You can upgrade any time from the sidebar.",
+        duration: 4000,
+      });
+      const url = new URL(window.location.href);
+      url.searchParams.delete("checkout");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [location]);
 
   const onCheckout = async () => {
     setLoading(true);
@@ -42,10 +69,10 @@ export function PricingModal({ open, onOpenChange }: Props) {
       window.location.assign(result.url);
       return;
     }
-    if (result.reason === "not-configured") {
-      toast.info("Checkout is ready — connect Stripe to go live", {
+    if (result.reason === "auth") {
+      toast.info("Sign in required", {
         description: result.message,
-        duration: 6000,
+        duration: 4000,
       });
     } else {
       toast.error(result.message);

@@ -1,8 +1,12 @@
 import { Link, useLocation } from "wouter";
-import { Home, ScanLine, FlaskConical, LayoutGrid, Activity, ShoppingCart, ShieldCheck, Calendar, Wrench, Smartphone, LogIn } from "lucide-react";
+import { Home, ScanLine, FlaskConical, LayoutGrid, Activity, ShoppingCart, ShieldCheck, Calendar, Wrench, Smartphone, LogIn, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { openModal } from "@/lib/modal-bus";
 import { useUser, useClerk } from "@clerk/react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { openCustomerPortal } from "@/lib/checkout";
+import { toast } from "sonner";
+import { useState } from "react";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -10,6 +14,8 @@ export function Sidebar() {
   const [location] = useLocation();
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
+  const subscription = useSubscription();
+  const [portalLoading, setPortalLoading] = useState(false);
 
   const displayName = user
     ? (user.firstName && user.lastName
@@ -33,6 +39,28 @@ export function Sidebar() {
     { href: "/restoration", label: "Restoration Lab", icon: Wrench },
     { href: "/mobile-app", label: "Mobile App", icon: Smartphone, badge: "NEW" },
   ];
+
+  const handleManageSubscription = async () => {
+    if (!user) {
+      openModal("pricing");
+      return;
+    }
+    if (!subscription.isPro) {
+      openModal("pricing");
+      return;
+    }
+    setPortalLoading(true);
+    const result = await openCustomerPortal(`${window.location.origin}${basePath}/`);
+    setPortalLoading(false);
+    if (result.ok) {
+      window.location.assign(result.url);
+    } else {
+      toast.error(result.message);
+    }
+  };
+
+  const planLabel = subscription.isPro ? "Pro • Active" : "Free Plan";
+  const planBadge = subscription.isPro ? "ACTIVE" : "FREE";
 
   return (
     <aside className="w-[260px] h-screen sticky top-0 border-r border-border bg-gradient-to-b from-[#081020ee] to-[#050914f2] backdrop-blur-xl flex flex-col p-4 overflow-y-auto z-50">
@@ -92,7 +120,13 @@ export function Sidebar() {
             )}
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm truncate">{displayName}</div>
-              <div className="text-[11px] text-secondary font-medium">Pro Member • 14-day streak</div>
+              <div className={cn(
+                "text-[11px] font-medium flex items-center gap-1",
+                subscription.isPro ? "text-secondary" : "text-muted-foreground"
+              )}>
+                {subscription.isPro && <Crown size={10} />}
+                {subscription.loading ? "Loading…" : (subscription.isPro ? "Pro Member" : "Free Plan")}
+              </div>
             </div>
             {user && (
               <button
@@ -110,16 +144,24 @@ export function Sidebar() {
           <div className="flex items-center justify-between mb-2">
             <div>
               <div className="text-[10px] text-muted-foreground font-bold tracking-wider">CURRENT PLAN</div>
-              <div className="font-bold text-accent text-sm">Pro • $9.99/mo</div>
+              <div className={cn("font-bold text-sm", subscription.isPro ? "text-accent" : "text-muted-foreground")}>
+                {subscription.loading ? "Loading…" : planLabel}
+              </div>
             </div>
-            <div className="px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-[9px] font-black">ACTIVE</div>
+            <div className={cn(
+              "px-2 py-0.5 rounded-full text-[9px] font-black",
+              subscription.isPro ? "bg-secondary/10 text-secondary" : "bg-white/5 text-muted-foreground"
+            )}>
+              {subscription.loading ? "…" : planBadge}
+            </div>
           </div>
           <button
-            onClick={() => openModal("pricing")}
+            onClick={handleManageSubscription}
+            disabled={portalLoading}
             data-testid="button-manage-subscription"
-            className="w-full mt-2 py-1.5 text-xs font-bold border border-white/10 rounded-lg hover:bg-white/5 transition"
+            className="w-full mt-2 py-1.5 text-xs font-bold border border-white/10 rounded-lg hover:bg-white/5 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Manage Subscription
+            {portalLoading ? "Opening…" : (subscription.isPro ? "Manage Subscription" : "Upgrade to Pro")}
           </button>
         </div>
       </div>

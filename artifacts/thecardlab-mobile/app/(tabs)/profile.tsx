@@ -1,10 +1,11 @@
 import React from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch, Alert, Image } from "react-native";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch, Alert, Image, Linking } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useUser, useAuth } from "@clerk/expo";
 import { useColors } from "@/hooks/useColors";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Pill, PrimaryButton } from "@/components/ui";
 
 const STATS = [
@@ -28,7 +29,8 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const [notifs, setNotifs] = React.useState(true);
   const { user } = useUser();
-  const { signOut } = useAuth();
+  const { signOut, getToken } = useAuth();
+  const subscription = useSubscription();
 
   const displayName = user
     ? (user.firstName && user.lastName
@@ -41,6 +43,59 @@ export default function ProfileScreen() {
     : "?";
 
   const email = user?.primaryEmailAddress?.emailAddress ?? user?.username ?? "";
+
+  const handleManageSubscription = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    if (!user) {
+      Alert.alert("Sign In Required", "Please sign in to manage your subscription.");
+      return;
+    }
+
+    if (!subscription.isPro) {
+      Alert.alert(
+        "Upgrade to Pro",
+        "Get unlimited scans, full Vault access, market alerts, and tax-ready reports.",
+        [
+          { text: "Maybe Later", style: "cancel" },
+          {
+            text: "Upgrade",
+            onPress: async () => {
+              const domain = process.env.EXPO_PUBLIC_DOMAIN;
+              if (!domain) return;
+              const url = `https://${domain}/?checkout=open`;
+              Linking.openURL(url);
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    const domain = process.env.EXPO_PUBLIC_DOMAIN;
+    if (!domain) return;
+
+    try {
+      const token = await getToken();
+      const res = await fetch(`https://${domain}/api/portal`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ returnUrl: `https://${domain}/` }),
+      });
+
+      if (!res.ok) throw new Error("Portal request failed");
+
+      const data = (await res.json()) as { url?: string };
+      if (data.url) {
+        await Linking.openURL(data.url);
+      }
+    } catch {
+      Alert.alert("Error", "Could not open subscription portal. Please try again.");
+    }
+  };
 
   const handleMenuPress = async (item: typeof MENU_ITEMS[number]) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -56,6 +111,14 @@ export default function ProfileScreen() {
     }
   };
 
+  const planLabel = subscription.loading
+    ? "Loading…"
+    : subscription.isPro
+      ? "Pro • Active"
+      : "Free Plan";
+
+  const planBadge = subscription.loading ? "…" : subscription.isPro ? "ACTIVE" : "FREE";
+
   return (
     <View style={[styles.root, { backgroundColor: c.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 12, borderBottomColor: c.border }]}>
@@ -66,7 +129,6 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 100 }]}
       >
-        {/* User card */}
         <View style={[styles.userCard, { backgroundColor: c.surface, borderColor: c.border }]}>
           {user?.imageUrl ? (
             <Image source={{ uri: user.imageUrl }} style={styles.avatarImg} />
@@ -79,33 +141,34 @@ export default function ProfileScreen() {
             <Text style={[styles.userName, { color: c.text }]}>{displayName}</Text>
             {email ? <Text style={[styles.userEmail, { color: c.mutedForeground }]}>{email}</Text> : null}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 }}>
-              <Pill label="Pro Member" variant="teal" />
+              {subscription.isPro ? (
+                <Pill label="Pro Member" variant="teal" />
+              ) : (
+                <Pill label="Free Plan" variant="muted" />
+              )}
               <Text style={[styles.streak, { color: c.accent }]}>🔥 14-day streak</Text>
             </View>
           </View>
         </View>
 
-        {/* Plan card */}
         <View style={[styles.planCard, { backgroundColor: c.surface, borderColor: `${c.secondary}60` }]}>
           <View style={styles.planRow}>
             <View>
               <Text style={[styles.planLabel, { color: c.mutedForeground }]}>CURRENT PLAN</Text>
-              <Text style={[styles.planValue, { color: c.accent }]}>Pro • $9.99/mo</Text>
+              <Text style={[styles.planValue, { color: subscription.isPro ? c.accent : c.mutedForeground }]}>
+                {planLabel}
+              </Text>
             </View>
             <View style={[styles.activeBadge, { backgroundColor: `${c.secondary}20` }]}>
-              <Text style={[styles.activeBadgeText, { color: c.secondary }]}>ACTIVE</Text>
+              <Text style={[styles.activeBadgeText, { color: c.secondary }]}>{planBadge}</Text>
             </View>
           </View>
           <PrimaryButton
-            label="Manage Subscription"
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              Alert.alert("Subscription", "Connect Stripe to manage your Pro subscription.", [{ text: "OK" }]);
-            }}
+            label={subscription.isPro ? "Manage Subscription" : "Upgrade to Pro"}
+            onPress={handleManageSubscription}
           />
         </View>
 
-        {/* Stats */}
         <View style={styles.statsGrid}>
           {STATS.map((s) => (
             <View key={s.label} style={[styles.statCard, { backgroundColor: c.surface, borderColor: c.border }]}>
@@ -116,7 +179,6 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Notifications toggle */}
         <View style={[styles.toggleRow, { backgroundColor: c.surface, borderColor: c.border }]}>
           <View style={styles.toggleLeft}>
             <Feather name="bell" size={18} color={c.primary} />
@@ -133,7 +195,6 @@ export default function ProfileScreen() {
           />
         </View>
 
-        {/* Menu */}
         <View style={[styles.menuCard, { backgroundColor: c.surface, borderColor: c.border }]}>
           {MENU_ITEMS.map((item, idx) => (
             <TouchableOpacity
