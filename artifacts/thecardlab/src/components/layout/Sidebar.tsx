@@ -1,10 +1,25 @@
 import { Link, useLocation } from "wouter";
-import { Home, ScanLine, FlaskConical, LayoutGrid, Activity, ShoppingCart, ShieldCheck, Calendar, Wrench, Smartphone } from "lucide-react";
+import { Home, ScanLine, FlaskConical, LayoutGrid, Activity, ShoppingCart, ShieldCheck, Calendar, Wrench, Smartphone, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { openModal } from "@/lib/modal-bus";
+import { useUser, useClerk } from "@clerk/react";
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export function Sidebar() {
   const [location] = useLocation();
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
+
+  const displayName = user
+    ? (user.firstName && user.lastName
+        ? `${user.firstName} ${user.lastName}`
+        : user.firstName ?? user.username ?? "Member")
+    : "Alex Carter";
+
+  const initials = user
+    ? ((user.firstName?.[0] ?? "") + (user.lastName?.[0] ?? user.username?.[0] ?? "")).toUpperCase() || "?"
+    : "AC";
 
   const navItems = [
     { href: "/", label: "Dashboard", icon: Home },
@@ -54,13 +69,42 @@ export function Sidebar() {
       </nav>
 
       <div className="mt-8 flex flex-col gap-3">
-        <div className="border border-border bg-gradient-to-br from-[#101f3add] to-[#071225cc] rounded-[18px] p-3.5 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#17417e] to-[#112452] flex items-center justify-center font-black text-sm">AC</div>
-          <div>
-            <div className="font-semibold text-sm">Alex Carter</div>
-            <div className="text-[11px] text-secondary font-medium">Pro Member • 14-day streak</div>
+        {isLoaded && !user ? (
+          <Link href="/sign-in">
+            <div className="border border-primary/30 bg-primary/5 rounded-[18px] p-3.5 flex items-center gap-3 cursor-pointer hover:bg-primary/10 transition-colors">
+              <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
+                <LogIn size={18} className="text-primary" />
+              </div>
+              <div>
+                <div className="font-semibold text-sm text-primary">Sign in</div>
+                <div className="text-[11px] text-muted-foreground">Google · Apple · GitHub</div>
+              </div>
+            </div>
+          </Link>
+        ) : (
+          <div className="border border-border bg-gradient-to-br from-[#101f3add] to-[#071225cc] rounded-[18px] p-3.5 flex items-center gap-3">
+            {user?.imageUrl ? (
+              <img src={user.imageUrl} alt={displayName} className="w-10 h-10 rounded-full object-cover" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#17417e] to-[#112452] flex items-center justify-center font-black text-sm">
+                {initials}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-sm truncate">{displayName}</div>
+              <div className="text-[11px] text-secondary font-medium">Pro Member • 14-day streak</div>
+            </div>
+            {user && (
+              <button
+                onClick={() => signOut({ redirectUrl: `${basePath}/` })}
+                className="text-[10px] text-muted-foreground hover:text-red-400 transition-colors"
+                title="Sign out"
+              >
+                Out
+              </button>
+            )}
           </div>
-        </div>
+        )}
 
         <div className="border border-border bg-gradient-to-br from-[#101f3add] to-[#071225cc] rounded-[18px] p-3.5">
           <div className="flex items-center justify-between mb-2">

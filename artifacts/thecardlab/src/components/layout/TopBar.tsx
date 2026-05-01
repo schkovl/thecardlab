@@ -1,10 +1,22 @@
-import { Search, Sparkles, Bell, Download, Check } from "lucide-react";
+import { Search, Sparkles, Bell, Download, Check, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { openModal } from "@/lib/modal-bus";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
+import { useUser, useClerk } from "@clerk/react";
+import { Link } from "wouter";
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export function TopBar() {
   const { installed } = usePwaInstall();
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
+
+  const initials = user
+    ? (user.firstName?.[0] ?? "") + (user.lastName?.[0] ?? user.username?.[0] ?? "")
+    : "AC";
+
+  const displayInitials = initials.toUpperCase() || "?";
 
   return (
     <header className="sticky top-0 z-40 flex items-center gap-4 bg-gradient-to-b from-[#050914f7] to-[#050914c7] backdrop-blur-md px-6 py-4 -mx-6 mb-4">
@@ -47,12 +59,59 @@ export function TopBar() {
           <span>{installed ? "Installed" : "Install App"}</span>
         </button>
 
-        <div
-          className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-[#03111c] font-black text-sm cursor-pointer ml-2"
-          data-testid="avatar-user"
-        >
-          AC
-        </div>
+        {isLoaded && !user && (
+          <Link href="/sign-in">
+            <button
+              className="h-[42px] px-4 flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 hover:bg-primary/20 transition-colors text-sm font-bold text-primary"
+              data-testid="button-sign-in"
+            >
+              <LogIn size={16} />
+              <span>Sign In</span>
+            </button>
+          </Link>
+        )}
+
+        {isLoaded && user && (
+          <div
+            className="relative group"
+          >
+            {user.imageUrl ? (
+              <img
+                src={user.imageUrl}
+                alt={user.firstName ?? "User"}
+                className="w-9 h-9 rounded-full cursor-pointer ring-2 ring-transparent group-hover:ring-primary/50 transition-all ml-2"
+                data-testid="avatar-user"
+              />
+            ) : (
+              <div
+                className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-[#03111c] font-black text-sm cursor-pointer ml-2"
+                data-testid="avatar-user"
+              >
+                {displayInitials}
+              </div>
+            )}
+            <div className="absolute right-0 top-12 hidden group-hover:flex flex-col bg-[#0d1a31] border border-border rounded-2xl shadow-2xl p-2 min-w-[160px] z-50">
+              <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border mb-1">
+                {user.primaryEmailAddress?.emailAddress ?? user.username}
+              </div>
+              <button
+                onClick={() => signOut({ redirectUrl: `${basePath}/` })}
+                className="px-3 py-2 text-sm text-left text-red-400 hover:bg-white/5 rounded-xl transition-colors font-medium"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!isLoaded && (
+          <div
+            className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-[#03111c] font-black text-sm cursor-pointer ml-2"
+            data-testid="avatar-user"
+          >
+            AC
+          </div>
+        )}
       </div>
     </header>
   );

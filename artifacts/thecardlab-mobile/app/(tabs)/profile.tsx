@@ -1,8 +1,9 @@
 import React from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch, Alert } from "react-native";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch, Alert, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { useUser, useAuth } from "@clerk/expo";
 import { useColors } from "@/hooks/useColors";
 import { Pill, PrimaryButton } from "@/components/ui";
 
@@ -26,6 +27,34 @@ export default function ProfileScreen() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const [notifs, setNotifs] = React.useState(true);
+  const { user } = useUser();
+  const { signOut } = useAuth();
+
+  const displayName = user
+    ? (user.firstName && user.lastName
+        ? `${user.firstName} ${user.lastName}`
+        : user.firstName ?? user.username ?? "Member")
+    : "Member";
+
+  const initials = user
+    ? ((user.firstName?.[0] ?? "") + (user.lastName?.[0] ?? user.username?.[0] ?? "")).toUpperCase() || "?"
+    : "?";
+
+  const email = user?.primaryEmailAddress?.emailAddress ?? user?.username ?? "";
+
+  const handleMenuPress = async (item: typeof MENU_ITEMS[number]) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (item.danger) {
+      Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign Out",
+          style: "destructive",
+          onPress: () => signOut(),
+        },
+      ]);
+    }
+  };
 
   return (
     <View style={[styles.root, { backgroundColor: c.background }]}>
@@ -39,12 +68,17 @@ export default function ProfileScreen() {
       >
         {/* User card */}
         <View style={[styles.userCard, { backgroundColor: c.surface, borderColor: c.border }]}>
-          <View style={[styles.avatar, { backgroundColor: c.primary }]}>
-            <Text style={styles.avatarText}>AC</Text>
-          </View>
+          {user?.imageUrl ? (
+            <Image source={{ uri: user.imageUrl }} style={styles.avatarImg} />
+          ) : (
+            <View style={[styles.avatar, { backgroundColor: c.primary }]}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
+          )}
           <View style={{ flex: 1 }}>
-            <Text style={[styles.userName, { color: c.text }]}>Alex Carter</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 }}>
+            <Text style={[styles.userName, { color: c.text }]}>{displayName}</Text>
+            {email ? <Text style={[styles.userEmail, { color: c.mutedForeground }]}>{email}</Text> : null}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 }}>
               <Pill label="Pro Member" variant="teal" />
               <Text style={[styles.streak, { color: c.accent }]}>🔥 14-day streak</Text>
             </View>
@@ -52,7 +86,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Plan card */}
-        <View style={[styles.planCard, { backgroundColor: c.surface, borderColor: c.border, borderColor: `${c.secondary}60` }]}>
+        <View style={[styles.planCard, { backgroundColor: c.surface, borderColor: `${c.secondary}60` }]}>
           <View style={styles.planRow}>
             <View>
               <Text style={[styles.planLabel, { color: c.mutedForeground }]}>CURRENT PLAN</Text>
@@ -104,7 +138,7 @@ export default function ProfileScreen() {
           {MENU_ITEMS.map((item, idx) => (
             <TouchableOpacity
               key={item.label}
-              onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+              onPress={() => handleMenuPress(item)}
               style={[
                 styles.menuItem,
                 idx < MENU_ITEMS.length - 1 && { borderBottomWidth: 1, borderBottomColor: c.border },
@@ -133,8 +167,10 @@ const styles = StyleSheet.create({
   scroll: { padding: 16, gap: 12 },
   userCard: { borderRadius: 18, borderWidth: 1, padding: 16, flexDirection: "row", alignItems: "center", gap: 14 },
   avatar: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
+  avatarImg: { width: 52, height: 52, borderRadius: 26 },
   avatarText: { color: "#03111c", fontWeight: "900", fontSize: 18 },
-  userName: { fontSize: 20, fontWeight: "900" },
+  userName: { fontSize: 18, fontWeight: "900" },
+  userEmail: { fontSize: 12, marginTop: 2 },
   streak: { fontSize: 12, fontWeight: "700" },
   planCard: { borderRadius: 18, borderWidth: 2, padding: 16, gap: 14 },
   planRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
