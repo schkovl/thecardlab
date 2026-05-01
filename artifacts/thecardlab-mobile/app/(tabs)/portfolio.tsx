@@ -19,7 +19,10 @@ import {
   useListPortfolioHoldings,
   useCreatePortfolioHolding,
   useDeletePortfolioHolding,
+  useUpdatePortfolioHolding,
   getListPortfolioHoldingsQueryKey,
+  getGetPortfolioHistoryQueryKey,
+  PortfolioHolding,
 } from "@workspace/api-client-react";
 import { useAuth } from "@clerk/expo";
 
@@ -32,13 +35,20 @@ export default function PortfolioScreen() {
   const qc = useQueryClient();
 
   const [sort, setSort] = useState<"gain" | "value" | "alpha">("gain");
+
+  // Add card state
   const [showAdd, setShowAdd] = useState(false);
   const [cardName, setCardName] = useState("");
   const [grade, setGrade] = useState("PSA 9");
   const [cost, setCost] = useState("");
   const [value, setValue] = useState("");
 
-  const { data: holdings = [], isLoading, refetch } = useListPortfolioHoldings({
+  // Edit card state
+  const [editItem, setEditItem] = useState<PortfolioHolding | null>(null);
+  const [editGrade, setEditGrade] = useState("PSA 9");
+  const [editValue, setEditValue] = useState("");
+
+  const { data: holdings = [], isLoading } = useListPortfolioHoldings({
     query: {
       enabled: !!isSignedIn,
       queryKey: getListPortfolioHoldingsQueryKey(),
@@ -49,6 +59,7 @@ export default function PortfolioScreen() {
     mutation: {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetPortfolioHistoryQueryKey() });
         setShowAdd(false);
         setCardName("");
         setCost("");
@@ -61,8 +72,23 @@ export default function PortfolioScreen() {
 
   const deleteMutation = useDeletePortfolioHolding({
     mutation: {
-      onSuccess: () => qc.invalidateQueries({ queryKey: getListPortfolioHoldingsQueryKey() }),
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetPortfolioHistoryQueryKey() });
+        setEditItem(null);
+      },
       onError: () => Alert.alert("Error", "Failed to remove card"),
+    },
+  });
+
+  const updateMutation = useUpdatePortfolioHolding({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetPortfolioHistoryQueryKey() });
+        setEditItem(null);
+      },
+      onError: () => Alert.alert("Error", "Failed to update card"),
     },
   });
 
@@ -81,13 +107,33 @@ export default function PortfolioScreen() {
     });
   };
 
-  const handleDelete = (id: string, card: string) => {
-    Alert.alert("Remove Card", `Remove "${card}" from your portfolio?`, [
+  const openEdit = (item: PortfolioHolding) => {
+    setEditItem(item);
+    setEditGrade(item.grade);
+    setEditValue(String(item.value));
+  };
+
+  const handleSaveEdit = () => {
+    if (!editItem) return;
+    const parsedValue = parseInt(editValue, 10);
+    if (isNaN(parsedValue) || parsedValue < 0) {
+      Alert.alert("Invalid Value", "Please enter a valid current value");
+      return;
+    }
+    updateMutation.mutate({
+      id: editItem.id,
+      data: { grade: editGrade, value: parsedValue },
+    });
+  };
+
+  const handleDeleteFromEdit = () => {
+    if (!editItem) return;
+    Alert.alert("Remove Card", `Remove "${editItem.card}" from your portfolio?`, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Remove",
         style: "destructive",
-        onPress: () => deleteMutation.mutate({ id }),
+        onPress: () => deleteMutation.mutate({ id: editItem.id }),
       },
     ]);
   };
@@ -102,6 +148,8 @@ export default function PortfolioScreen() {
   const totalCost = holdings.reduce((s, h) => s + h.cost, 0);
   const totalGain = totalValue - totalCost;
   const gainPct = totalCost > 0 ? ((totalGain / totalCost) * 100).toFixed(1) : "0.0";
+
+  const isMutating = updateMutation.isPending || deleteMutation.isPending;
 
   return (
     <View style={[styles.root, { backgroundColor: c.background }]}>
@@ -170,7 +218,7 @@ export default function PortfolioScreen() {
           sorted.map((item) => (
             <TouchableOpacity
               key={item.id}
-              onLongPress={() => handleDelete(item.id, item.card)}
+              onLongPress={() => openEdit(item)}
               style={[styles.holdingRow, { backgroundColor: c.surface, borderColor: c.border }]}
             >
               <View style={[styles.holdingAvatar, { backgroundColor: c.background }]}>
@@ -192,7 +240,7 @@ export default function PortfolioScreen() {
         )}
 
         {holdings.length > 0 && (
-          <Text style={[styles.hintText, { color: c.mutedForeground }]}>Long press a card to remove it</Text>
+          <Text style={[styles.hintText, { color: c.mutedForeground }]}>Long press a card to edit or remove it</Text>
         )}
       </ScrollView>
 
@@ -273,6 +321,75 @@ export default function PortfolioScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Edit Card Modal */}
+      <Modal visible={!!editItem} transparent animationType="slide" onRequestClose={() => setEditItem(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalSheet, { backgroundColor: c.surface, borderColor: c.border }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: c.text }]}>Edit Card</Text>
+              <TouchableOpacity onPress={() => setEditItem(null)}>
+                <Feather name="x" size={22} color={c.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+
+            {editItem && (
+              <Text style={[styles.editCardName, { color: c.mutedForeground }]} numberOfLines={1}>
+                {editItem.card}
+              </Text>
+            )}
+
+            <Text style={[styles.inputLabel, { color: c.label }]}>Grade</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }}>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                {GRADES.map((g) => (
+                  <TouchableOpacity
+                    key={g}
+                    onPress={() => setEditGrade(g)}
+                    style={[
+                      styles.gradeChip,
+                      { backgroundColor: editGrade === g ? c.primary : c.background, borderColor: editGrade === g ? c.primary : c.border }
+                    ]}
+                  >
+                    <Text style={{ color: editGrade === g ? c.primaryForeground : c.mutedForeground, fontSize: 12, fontWeight: "700" }}>{g}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            <Text style={[styles.inputLabel, { color: c.label }]}>Current Value ($)</Text>
+            <TextInput
+              value={editValue}
+              onChangeText={setEditValue}
+              placeholder="0"
+              placeholderTextColor={c.mutedForeground}
+              keyboardType="numeric"
+              style={[styles.input, { color: c.text, backgroundColor: c.background, borderColor: c.input }]}
+            />
+
+            <TouchableOpacity
+              onPress={handleSaveEdit}
+              disabled={isMutating}
+              style={[styles.addBtn, { backgroundColor: c.primary, opacity: isMutating ? 0.6 : 1 }]}
+            >
+              {updateMutation.isPending ? (
+                <ActivityIndicator color={c.primaryForeground} size="small" />
+              ) : (
+                <Text style={{ color: c.primaryForeground, fontWeight: "800", fontSize: 15 }}>Save Changes</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleDeleteFromEdit}
+              disabled={isMutating}
+              style={[styles.deleteBtn, { borderColor: c.danger, opacity: isMutating ? 0.5 : 1 }]}
+            >
+              <Feather name="trash-2" size={15} color={c.danger} />
+              <Text style={{ color: c.danger, fontWeight: "700", fontSize: 14 }}>Remove from Portfolio</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -328,8 +445,10 @@ const styles = StyleSheet.create({
   modalSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, borderWidth: 1, padding: 24, paddingBottom: 40 },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
   modalTitle: { fontSize: 18, fontWeight: "800" },
+  editCardName: { fontSize: 13, marginBottom: 18, marginTop: -10 },
   inputLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 0.3, marginBottom: 6 },
   input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, marginBottom: 14 },
   gradeChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 99, borderWidth: 1 },
   addBtn: { borderRadius: 14, height: 50, alignItems: "center", justifyContent: "center", marginTop: 4 },
+  deleteBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, height: 46, borderWidth: 1, marginTop: 10 },
 });
