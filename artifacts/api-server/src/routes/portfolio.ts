@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { db, portfolioHoldingsTable, portfolioSnapshotsTable } from "@workspace/db";
 import { eq, and, asc } from "drizzle-orm";
-import { CreatePortfolioHoldingBody, ListPortfolioHoldingsResponseItem, GetPortfolioHistoryResponse } from "@workspace/api-zod";
+import { CreatePortfolioHoldingBody, UpdatePortfolioHoldingBody, ListPortfolioHoldingsResponseItem, GetPortfolioHistoryResponse } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -52,6 +52,48 @@ router.post("/portfolio", requireAuth, async (req, res) => {
     .returning();
 
   res.status(201).json(toResponse(row));
+});
+
+router.put("/portfolio/:id", requireAuth, async (req, res) => {
+  const { userId } = getAuth(req);
+  const id = String(req.params.id);
+  const body = UpdatePortfolioHoldingBody.parse(req.body);
+
+  const updateValues: Partial<typeof portfolioHoldingsTable.$inferSelect> = {};
+  if (body.grade !== undefined) updateValues.grade = body.grade;
+  if (body.value !== undefined) updateValues.value = body.value;
+
+  if (Object.keys(updateValues).length === 0) {
+    res.status(400).json({ error: "At least one field (grade or value) must be provided" });
+    return;
+  }
+
+  const updated = await db
+    .update(portfolioHoldingsTable)
+    .set(updateValues)
+    .where(and(eq(portfolioHoldingsTable.id, id), eq(portfolioHoldingsTable.clerkUserId, userId!)))
+    .returning();
+
+  if (updated.length === 0) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  const holdings = await db
+    .select()
+    .from(portfolioHoldingsTable)
+    .where(eq(portfolioHoldingsTable.clerkUserId, userId!));
+  const totalValue = holdings.reduce((sum, h) => sum + h.value, 0);
+  await db
+    .insert(portfolioSnapshotsTable)
+    .values({ clerkUserId: userId!, totalValue, snapshotDate: today })
+    .onConflictDoUpdate({
+      target: [portfolioSnapshotsTable.clerkUserId, portfolioSnapshotsTable.snapshotDate],
+      set: { totalValue },
+    });
+
+  res.json(toResponse(updated[0]));
 });
 
 router.get("/portfolio/history", requireAuth, async (req, res) => {

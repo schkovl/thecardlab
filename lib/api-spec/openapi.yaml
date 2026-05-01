@@ -75,6 +75,41 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
   /portfolio/{id}:
+    put:
+      operationId: updatePortfolioHolding
+      tags: [portfolio]
+      summary: Update a portfolio holding
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePortfolioHolding"
+      responses:
+        "200":
+          description: Updated holding
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioHolding"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     delete:
       operationId: deletePortfolioHolding
       tags: [portfolio]
@@ -268,6 +303,15 @@ components:
         - grade
         - cost
         - value
+
+    UpdatePortfolioHolding:
+      type: object
+      properties:
+        grade:
+          type: string
+        value:
+          type: integer
+      minProperties: 1
 
     ScanResult:
       type: object

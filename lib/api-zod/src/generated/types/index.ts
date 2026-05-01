@@ -18,3 +18,4 @@ export * from "./marketComps";
 export * from "./portfolioHolding";
 export * from "./portfolioSnapshot";
 export * from "./scanResult";
+export * from "./updatePortfolioHolding";

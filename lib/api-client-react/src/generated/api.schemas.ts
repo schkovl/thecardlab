@@ -33,6 +33,11 @@ export interface CreatePortfolioHolding {
   purchaseDate?: string;
 }
 
+export interface UpdatePortfolioHolding {
+  grade?: string;
+  value?: number;
+}
+
 export interface ScanResult {
   id: string;
   cardName: string;

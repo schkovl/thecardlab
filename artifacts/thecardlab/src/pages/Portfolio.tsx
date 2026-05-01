@@ -2,7 +2,7 @@ import { Shell } from "@/components/layout/Shell";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { Pill } from "@/components/cards/Pill";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { ArrowUpRight, Loader2, Trash2, X, Plus } from "lucide-react";
+import { ArrowUpRight, Loader2, Trash2, X, Plus, Pencil } from "lucide-react";
 import { useState } from "react";
 import { useUser } from "@clerk/react";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import {
   useListPortfolioHoldings,
   useCreatePortfolioHolding,
   useDeletePortfolioHolding,
+  useUpdatePortfolioHolding,
   getListPortfolioHoldingsQueryKey,
   useGetPortfolioHistory,
   getGetPortfolioHistoryQueryKey,
@@ -56,8 +57,22 @@ export default function Portfolio() {
     },
   });
 
+  const updateMutation = useUpdatePortfolioHolding({
+    mutation: {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetPortfolioHistoryQueryKey() });
+        toast.success("Card updated");
+        setEditingId(null);
+      },
+      onError: () => toast.error("Failed to update card"),
+    },
+  });
+
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ card: "", grade: "PSA 9", cost: "", value: "" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ grade: "PSA 9", value: "" });
 
   const totalValue = holdings.reduce((s, h) => s + h.value, 0);
   const totalCost = holdings.reduce((s, h) => s + h.cost, 0);
@@ -80,6 +95,26 @@ export default function Portfolio() {
     });
   };
 
+  const openEdit = (item: { id: string; grade: string; value: number }) => {
+    setEditingId(item.id);
+    setEditForm({ grade: item.grade, value: String(item.value) });
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingId || !editForm.value) {
+      toast.error("Please fill in a value");
+      return;
+    }
+    updateMutation.mutate({
+      id: editingId,
+      data: {
+        grade: editForm.grade,
+        value: parseInt(editForm.value, 10),
+      },
+    });
+  };
+
   return (
     <Shell>
       <div className="flex items-end justify-between mb-6">
@@ -97,6 +132,53 @@ export default function Portfolio() {
           </button>
         )}
       </div>
+
+      {/* Edit modal */}
+      {editingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-[#0d1a31] border border-border rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">Update Holding</h2>
+              <button onClick={() => setEditingId(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Grade</label>
+                <select
+                  value={editForm.grade}
+                  onChange={(e) => setEditForm((f) => ({ ...f, grade: e.target.value }))}
+                  className="w-full h-10 bg-white/5 border border-border rounded-lg px-3 text-sm text-foreground focus:outline-none focus:border-primary/50 transition-colors"
+                >
+                  {GRADES.map((g) => (
+                    <option key={g} value={g} className="bg-[#0d1a31]">{g}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Current Value ($) *</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={editForm.value}
+                  onChange={(e) => setEditForm((f) => ({ ...f, value: e.target.value }))}
+                  placeholder="0"
+                  className="w-full h-10 bg-white/5 border border-border rounded-lg px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={updateMutation.isPending}
+                className="w-full h-10 rounded-xl bg-gradient-to-br from-primary to-[#00bcd4] text-[#03111c] font-bold flex items-center justify-center gap-2 hover:-translate-y-0.5 transition-transform disabled:opacity-50 disabled:hover:translate-y-0"
+              >
+                {updateMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : null}
+                Save Changes
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Add Item modal */}
       {showAdd && (
@@ -281,13 +363,23 @@ export default function Portfolio() {
                       <div className={`text-xs ${item.gain >= 0 ? "text-secondary" : "text-destructive"}`}>{item.gainPct.toFixed(1)}%</div>
                     </td>
                     <td className="py-3 px-4">
-                      <button
-                        onClick={() => deleteMutation.mutate({ id: item.id })}
-                        disabled={deleteMutation.isPending}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => openEdit(item)}
+                          className="text-muted-foreground hover:text-primary"
+                          title="Edit holding"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={() => deleteMutation.mutate({ id: item.id })}
+                          disabled={deleteMutation.isPending}
+                          className="text-muted-foreground hover:text-destructive"
+                          title="Remove holding"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

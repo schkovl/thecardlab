@@ -46,6 +46,30 @@ export const CreatePortfolioHoldingBody = zod.object({
 });
 
 /**
+ * @summary Update a portfolio holding
+ */
+export const UpdatePortfolioHoldingParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdatePortfolioHoldingBody = zod.object({
+  grade: zod.string().optional(),
+  value: zod.number().optional(),
+});
+
+export const UpdatePortfolioHoldingResponse = zod.object({
+  id: zod.string(),
+  card: zod.string(),
+  grade: zod.string(),
+  cost: zod.number(),
+  value: zod.number(),
+  gain: zod.number(),
+  gainPct: zod.number(),
+  purchaseDate: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+
+/**
  * @summary Remove a portfolio holding
  */
 export const DeletePortfolioHoldingParams = zod.object({

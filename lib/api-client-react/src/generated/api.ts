@@ -26,6 +26,7 @@ import type {
   PortfolioHolding,
   PortfolioSnapshot,
   ScanResult,
+  UpdatePortfolioHolding,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -274,6 +275,94 @@ export const useCreatePortfolioHolding = <
   TContext
 > => {
   return useMutation(getCreatePortfolioHoldingMutationOptions(options));
+};
+
+/**
+ * @summary Update a portfolio holding
+ */
+export const getUpdatePortfolioHoldingUrl = (id: string) => {
+  return `/api/portfolio/${id}`;
+};
+
+export const updatePortfolioHolding = async (
+  id: string,
+  updatePortfolioHolding: UpdatePortfolioHolding,
+  options?: RequestInit,
+): Promise<PortfolioHolding> => {
+  return customFetch<PortfolioHolding>(getUpdatePortfolioHoldingUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updatePortfolioHolding),
+  });
+};
+
+export const getUpdatePortfolioHoldingMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePortfolioHolding>>,
+    TError,
+    { id: string; data: BodyType<UpdatePortfolioHolding> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePortfolioHolding>>,
+  TError,
+  { id: string; data: BodyType<UpdatePortfolioHolding> },
+  TContext
+> => {
+  const mutationKey = ["updatePortfolioHolding"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePortfolioHolding>>,
+    { id: string; data: BodyType<UpdatePortfolioHolding> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updatePortfolioHolding(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdatePortfolioHoldingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePortfolioHolding>>
+>;
+export type UpdatePortfolioHoldingMutationBody =
+  BodyType<UpdatePortfolioHolding>;
+export type UpdatePortfolioHoldingMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update a portfolio holding
+ */
+export const useUpdatePortfolioHolding = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePortfolioHolding>>,
+    TError,
+    { id: string; data: BodyType<UpdatePortfolioHolding> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updatePortfolioHolding>>,
+  TError,
+  { id: string; data: BodyType<UpdatePortfolioHolding> },
+  TContext
+> => {
+  return useMutation(getUpdatePortfolioHoldingMutationOptions(options));
 };
 
 /**
