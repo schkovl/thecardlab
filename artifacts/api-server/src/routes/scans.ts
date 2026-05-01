@@ -1,9 +1,9 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { db, scanResultsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { CreateScanResultBody, ListScanResultsResponseItem } from "@workspace/api-zod";
-import { desc } from "drizzle-orm";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
@@ -27,36 +27,27 @@ function toResponse(row: typeof scanResultsTable.$inferSelect) {
   });
 }
 
-router.get("/scans", async (req, res) => {
+router.get("/scans", requireAuth, async (req, res) => {
   const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
 
   const rows = await db
     .select()
     .from(scanResultsTable)
-    .where(eq(scanResultsTable.clerkUserId, userId))
+    .where(eq(scanResultsTable.clerkUserId, userId!))
     .orderBy(desc(scanResultsTable.createdAt))
     .limit(50);
 
   res.json(rows.map(toResponse));
 });
 
-router.post("/scans", async (req, res) => {
+router.post("/scans", requireAuth, async (req, res) => {
   const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-
   const body = CreateScanResultBody.parse(req.body);
 
   const [row] = await db
     .insert(scanResultsTable)
     .values({
-      clerkUserId: userId,
+      clerkUserId: userId!,
       cardName: body.cardName,
       year: body.year ?? null,
       setName: body.setName ?? null,

@@ -3,6 +3,7 @@ import { getAuth } from "@clerk/express";
 import { db, portfolioHoldingsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { CreatePortfolioHoldingBody, ListPortfolioHoldingsResponseItem } from "@workspace/api-zod";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
@@ -22,35 +23,26 @@ function toResponse(row: typeof portfolioHoldingsTable.$inferSelect) {
   });
 }
 
-router.get("/portfolio", async (req, res) => {
+router.get("/portfolio", requireAuth, async (req, res) => {
   const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
 
   const rows = await db
     .select()
     .from(portfolioHoldingsTable)
-    .where(eq(portfolioHoldingsTable.clerkUserId, userId))
+    .where(eq(portfolioHoldingsTable.clerkUserId, userId!))
     .orderBy(portfolioHoldingsTable.createdAt);
 
   res.json(rows.map(toResponse));
 });
 
-router.post("/portfolio", async (req, res) => {
+router.post("/portfolio", requireAuth, async (req, res) => {
   const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-
   const body = CreatePortfolioHoldingBody.parse(req.body);
 
   const [row] = await db
     .insert(portfolioHoldingsTable)
     .values({
-      clerkUserId: userId,
+      clerkUserId: userId!,
       card: body.card,
       grade: body.grade,
       cost: body.cost,
@@ -62,18 +54,13 @@ router.post("/portfolio", async (req, res) => {
   res.status(201).json(toResponse(row));
 });
 
-router.delete("/portfolio/:id", async (req, res) => {
+router.delete("/portfolio/:id", requireAuth, async (req, res) => {
   const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-
-  const { id } = req.params;
+  const id = String(req.params.id);
 
   const deleted = await db
     .delete(portfolioHoldingsTable)
-    .where(and(eq(portfolioHoldingsTable.id, id), eq(portfolioHoldingsTable.clerkUserId, userId)))
+    .where(and(eq(portfolioHoldingsTable.id, id), eq(portfolioHoldingsTable.clerkUserId, userId!)))
     .returning();
 
   if (deleted.length === 0) {
