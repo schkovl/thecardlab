@@ -3,35 +3,62 @@
     "name": "TheCardLab",
     "slug": "thecardlab-mobile",
     "version": "1.0.0",
+    "description": "TheCardLab is a premium AI-powered sports card analytics platform. Track your portfolio, analyze comps and grading probability with AI, manage PSA / BGS / SGC / CGC submissions, hunt cards on your wantlist, and screen live listings — all in one place.",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "thecardlab",
     "userInterfaceStyle": "dark",
+    "primaryColor": "#0EE6B7",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#050914"
     },
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.thecardlab.app"
+      "bundleIdentifier": "com.thecardlab.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [],
+        "LSApplicationQueriesSchemes": ["https", "mailto"]
+      }
     },
     "android": {
-      "package": "com.thecardlab.app"
+      "package": "com.thecardlab.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#050914"
+      },
+      "edgeToEdgeEnabled": true,
+      "permissions": []
     },
     "web": {
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./assets/images/icon.png",
+      "bundler": "metro"
     },
     "plugins": [
       [
         "expo-router",
         {
-          "origin": "https://replit.com/"
+          "origin": "https://thecardlab.app"
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#050914"
+        }
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
