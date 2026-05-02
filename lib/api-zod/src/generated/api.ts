@@ -55,6 +55,7 @@ export const UpdatePortfolioHoldingParams = zod.object({
 export const UpdatePortfolioHoldingBody = zod.object({
   grade: zod.string().optional(),
   value: zod.number().optional(),
+  cost: zod.number().optional(),
 });
 
 export const UpdatePortfolioHoldingResponse = zod.object({

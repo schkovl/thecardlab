@@ -46,6 +46,7 @@ export default function PortfolioScreen() {
   // Edit card state
   const [editItem, setEditItem] = useState<PortfolioHolding | null>(null);
   const [editGrade, setEditGrade] = useState("PSA 9");
+  const [editCost, setEditCost] = useState("");
   const [editValue, setEditValue] = useState("");
 
   const { data: holdings = [], isLoading } = useListPortfolioHoldings({
@@ -110,6 +111,7 @@ export default function PortfolioScreen() {
   const openEdit = (item: PortfolioHolding) => {
     setEditItem(item);
     setEditGrade(item.grade);
+    setEditCost(String(item.cost));
     setEditValue(String(item.value));
   };
 
@@ -120,9 +122,17 @@ export default function PortfolioScreen() {
       Alert.alert("Invalid Value", "Please enter a valid current value");
       return;
     }
+    let parsedCost: number | undefined;
+    if (editCost !== "") {
+      parsedCost = parseInt(editCost, 10);
+      if (isNaN(parsedCost) || parsedCost < 0) {
+        Alert.alert("Invalid Cost", "Please enter a valid cost basis");
+        return;
+      }
+    }
     updateMutation.mutate({
       id: editItem.id,
-      data: { grade: editGrade, value: parsedValue },
+      data: { grade: editGrade, cost: parsedCost, value: parsedValue },
     });
   };
 
@@ -357,15 +367,30 @@ export default function PortfolioScreen() {
               </View>
             </ScrollView>
 
-            <Text style={[styles.inputLabel, { color: c.label }]}>Current Value ($)</Text>
-            <TextInput
-              value={editValue}
-              onChangeText={setEditValue}
-              placeholder="0"
-              placeholderTextColor={c.mutedForeground}
-              keyboardType="numeric"
-              style={[styles.input, { color: c.text, backgroundColor: c.background, borderColor: c.input }]}
-            />
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.inputLabel, { color: c.label }]}>Cost Basis ($)</Text>
+                <TextInput
+                  value={editCost}
+                  onChangeText={setEditCost}
+                  placeholder="0"
+                  placeholderTextColor={c.mutedForeground}
+                  keyboardType="numeric"
+                  style={[styles.input, { color: c.text, backgroundColor: c.background, borderColor: c.input }]}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.inputLabel, { color: c.label }]}>Current Value ($)</Text>
+                <TextInput
+                  value={editValue}
+                  onChangeText={setEditValue}
+                  placeholder="0"
+                  placeholderTextColor={c.mutedForeground}
+                  keyboardType="numeric"
+                  style={[styles.input, { color: c.text, backgroundColor: c.background, borderColor: c.input }]}
+                />
+              </View>
+            </View>
 
             <TouchableOpacity
               onPress={handleSaveEdit}

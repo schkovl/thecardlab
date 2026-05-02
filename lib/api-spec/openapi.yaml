@@ -311,6 +311,8 @@ components:
           type: string
         value:
           type: integer
+        cost:
+          type: integer
       minProperties: 1
 
     ScanResult:

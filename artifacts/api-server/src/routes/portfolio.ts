@@ -62,9 +62,10 @@ router.put("/portfolio/:id", requireAuth, async (req, res) => {
   const updateValues: Partial<typeof portfolioHoldingsTable.$inferSelect> = {};
   if (body.grade !== undefined) updateValues.grade = body.grade;
   if (body.value !== undefined) updateValues.value = body.value;
+  if (body.cost !== undefined) updateValues.cost = body.cost;
 
   if (Object.keys(updateValues).length === 0) {
-    res.status(400).json({ error: "At least one field (grade or value) must be provided" });
+    res.status(400).json({ error: "At least one field (grade, value, or cost) must be provided" });
     return;
   }
 

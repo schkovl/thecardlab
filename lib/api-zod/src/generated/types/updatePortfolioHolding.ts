@@ -9,4 +9,5 @@
 export interface UpdatePortfolioHolding {
   grade?: string;
   value?: number;
+  cost?: number;
 }

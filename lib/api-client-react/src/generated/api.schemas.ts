@@ -36,6 +36,7 @@ export interface CreatePortfolioHolding {
 export interface UpdatePortfolioHolding {
   grade?: string;
   value?: number;
+  cost?: number;
 }
 
 export interface ScanResult {

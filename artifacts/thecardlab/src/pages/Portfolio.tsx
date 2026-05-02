@@ -85,7 +85,7 @@ export default function Portfolio() {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ card: "", grade: "PSA 9", cost: "", value: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ grade: "PSA 9", value: "" });
+  const [editForm, setEditForm] = useState({ grade: "PSA 9", cost: "", value: "" });
 
   const totalValue = holdings.reduce((s, h) => s + h.value, 0);
   const totalCost = holdings.reduce((s, h) => s + h.cost, 0);
@@ -108,9 +108,9 @@ export default function Portfolio() {
     });
   };
 
-  const openEdit = (item: { id: string; grade: string; value: number }) => {
+  const openEdit = (item: { id: string; grade: string; cost: number; value: number }) => {
     setEditingId(item.id);
-    setEditForm({ grade: item.grade, value: String(item.value) });
+    setEditForm({ grade: item.grade, cost: String(item.cost), value: String(item.value) });
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -119,11 +119,25 @@ export default function Portfolio() {
       toast.error("Please fill in a value");
       return;
     }
+    const parsedValue = parseInt(editForm.value, 10);
+    if (isNaN(parsedValue) || parsedValue < 0) {
+      toast.error("Current value must be a non-negative number");
+      return;
+    }
+    let parsedCost: number | undefined;
+    if (editForm.cost !== "") {
+      parsedCost = parseInt(editForm.cost, 10);
+      if (isNaN(parsedCost) || parsedCost < 0) {
+        toast.error("Cost basis must be a non-negative number");
+        return;
+      }
+    }
     updateMutation.mutate({
       id: editingId,
       data: {
         grade: editForm.grade,
-        value: parseInt(editForm.value, 10),
+        cost: parsedCost,
+        value: parsedValue,
       },
     });
   };
@@ -169,16 +183,29 @@ export default function Portfolio() {
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Current Value ($) *</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={editForm.value}
-                  onChange={(e) => setEditForm((f) => ({ ...f, value: e.target.value }))}
-                  placeholder="0"
-                  className="w-full h-10 bg-white/5 border border-border rounded-lg px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Cost Basis ($)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editForm.cost}
+                    onChange={(e) => setEditForm((f) => ({ ...f, cost: e.target.value }))}
+                    placeholder="0"
+                    className="w-full h-10 bg-white/5 border border-border rounded-lg px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Current Value ($) *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editForm.value}
+                    onChange={(e) => setEditForm((f) => ({ ...f, value: e.target.value }))}
+                    placeholder="0"
+                    className="w-full h-10 bg-white/5 border border-border rounded-lg px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
+                  />
+                </div>
               </div>
               <button
                 type="submit"
