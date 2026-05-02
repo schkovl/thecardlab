@@ -71,9 +71,11 @@ export default function PortfolioScreen() {
     },
   });
 
+  type HoldingsContext = { previousHoldings: PortfolioHolding[] | undefined };
+
   const deleteMutation = useDeletePortfolioHolding({
     mutation: {
-      onMutate: async ({ id }) => {
+      onMutate: async ({ id }): Promise<HoldingsContext> => {
         await qc.cancelQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
         const previousHoldings = qc.getQueryData<PortfolioHolding[]>(getListPortfolioHoldingsQueryKey());
         qc.setQueryData<PortfolioHolding[]>(
@@ -83,23 +85,25 @@ export default function PortfolioScreen() {
         return { previousHoldings };
       },
       onError: (_err, _vars, context) => {
-        const ctx = context as { previousHoldings?: PortfolioHolding[] } | undefined;
+        const ctx = context as HoldingsContext | undefined;
         if (ctx?.previousHoldings !== undefined) {
           qc.setQueryData(getListPortfolioHoldingsQueryKey(), ctx.previousHoldings);
         }
         Alert.alert("Error", "Failed to remove card");
       },
+      onSuccess: () => {
+        setEditItem(null);
+      },
       onSettled: () => {
         qc.invalidateQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
         qc.invalidateQueries({ queryKey: getGetPortfolioHistoryQueryKey() });
-        setEditItem(null);
       },
     },
   });
 
   const updateMutation = useUpdatePortfolioHolding({
     mutation: {
-      onMutate: async ({ id, data }) => {
+      onMutate: async ({ id, data }): Promise<HoldingsContext> => {
         await qc.cancelQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
         const previousHoldings = qc.getQueryData<PortfolioHolding[]>(getListPortfolioHoldingsQueryKey());
         qc.setQueryData<PortfolioHolding[]>(
@@ -122,16 +126,18 @@ export default function PortfolioScreen() {
         return { previousHoldings };
       },
       onError: (_err, _vars, context) => {
-        const ctx = context as { previousHoldings?: PortfolioHolding[] } | undefined;
+        const ctx = context as HoldingsContext | undefined;
         if (ctx?.previousHoldings !== undefined) {
           qc.setQueryData(getListPortfolioHoldingsQueryKey(), ctx.previousHoldings);
         }
         Alert.alert("Error", "Failed to update card");
       },
+      onSuccess: () => {
+        setEditItem(null);
+      },
       onSettled: () => {
         qc.invalidateQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
         qc.invalidateQueries({ queryKey: getGetPortfolioHistoryQueryKey() });
-        setEditItem(null);
       },
     },
   });
