@@ -23,6 +23,8 @@ import {
   useListScanResults,
   getListScanResultsQueryKey,
   getListPortfolioHoldingsQueryKey,
+  getGetPortfolioHistoryQueryKey,
+  PortfolioHolding,
 } from "@workspace/api-client-react";
 
 type AnalysisResult = {
@@ -66,14 +68,45 @@ export default function ScreenerScreen() {
     },
   });
 
+  type HoldingsContext = { previousHoldings: PortfolioHolding[] | undefined };
+
   const addToPortfolioMutation = useCreatePortfolioHolding({
     mutation: {
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
+      onMutate: async ({ data }): Promise<HoldingsContext> => {
+        await qc.cancelQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
+        const previousHoldings = qc.getQueryData<PortfolioHolding[]>(getListPortfolioHoldingsQueryKey());
+        const cost = data.cost;
+        const value = data.value;
+        const optimistic: PortfolioHolding = {
+          id: `temp-${Date.now()}`,
+          card: data.card,
+          grade: data.grade,
+          cost,
+          value,
+          gain: value - cost,
+          gainPct: cost > 0 ? ((value - cost) / cost) * 100 : 0,
+          createdAt: new Date().toISOString(),
+        };
+        qc.setQueryData<PortfolioHolding[]>(
+          getListPortfolioHoldingsQueryKey(),
+          (old) => [optimistic, ...(old ?? [])]
+        );
         setAddedToPortfolio(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        return { previousHoldings };
       },
-      onError: () => Alert.alert("Error", "Failed to add to portfolio"),
+      onError: (_err, _vars, context) => {
+        const ctx = context as HoldingsContext | undefined;
+        if (ctx?.previousHoldings !== undefined) {
+          qc.setQueryData(getListPortfolioHoldingsQueryKey(), ctx.previousHoldings);
+        }
+        setAddedToPortfolio(false);
+        Alert.alert("Error", "Failed to add to portfolio");
+      },
+      onSettled: () => {
+        qc.invalidateQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
+        qc.invalidateQueries({ queryKey: getGetPortfolioHistoryQueryKey() });
+      },
     },
   });
 

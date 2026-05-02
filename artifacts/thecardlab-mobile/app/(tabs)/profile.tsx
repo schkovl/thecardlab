@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useUser, useAuth } from "@clerk/expo";
+import { useRouter } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Pill, PrimaryButton } from "@/components/ui";
@@ -15,13 +16,14 @@ const STATS = [
   { label: "Day Streak", value: "14", icon: "calendar" as const },
 ];
 
-const MENU_ITEMS: Array<{ icon: keyof typeof Feather.glyphMap; label: string; sub?: string; danger?: boolean }> = [
-  { icon: "bell", label: "Price Drop Alerts", sub: "3 active" },
-  { icon: "shield", label: "Global Vault", sub: "5 items secured" },
-  { icon: "calendar", label: "Card Shows", sub: "2 upcoming" },
-  { icon: "tool", label: "Restoration Lab", sub: "1 in progress" },
-  { icon: "help-circle", label: "Help & Support" },
-  { icon: "log-out", label: "Sign Out", danger: true },
+type MenuAction = "grading" | "wantlist" | "alerts" | "vault" | "help" | "signout";
+const MENU_ITEMS: Array<{ icon: keyof typeof Feather.glyphMap; label: string; sub?: string; action: MenuAction; danger?: boolean }> = [
+  { icon: "clipboard", label: "Grading Tracker", sub: "PSA · BGS · SGC · CGC", action: "grading" },
+  { icon: "bookmark", label: "Wantlist", sub: "Cards you're hunting", action: "wantlist" },
+  { icon: "bell", label: "Price Drop Alerts", sub: "3 active", action: "alerts" },
+  { icon: "shield", label: "Global Vault", sub: "5 items secured", action: "vault" },
+  { icon: "help-circle", label: "Help & Support", action: "help" },
+  { icon: "log-out", label: "Sign Out", action: "signout", danger: true },
 ];
 
 export default function ProfileScreen() {
@@ -31,6 +33,7 @@ export default function ProfileScreen() {
   const { user } = useUser();
   const { signOut, getToken } = useAuth();
   const subscription = useSubscription();
+  const router = useRouter();
 
   const displayName = user
     ? (user.firstName && user.lastName
@@ -99,15 +102,21 @@ export default function ProfileScreen() {
 
   const handleMenuPress = async (item: typeof MENU_ITEMS[number]) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (item.danger) {
-      Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Sign Out",
-          style: "destructive",
-          onPress: () => signOut(),
-        },
-      ]);
+    switch (item.action) {
+      case "grading":
+        router.push("/grading");
+        return;
+      case "wantlist":
+        router.push("/wantlist");
+        return;
+      case "signout":
+        Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+          { text: "Cancel", style: "cancel" },
+          { text: "Sign Out", style: "destructive", onPress: () => signOut() },
+        ]);
+        return;
+      default:
+        return;
     }
   };
 
