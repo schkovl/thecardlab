@@ -17,6 +17,8 @@ import Vault from "@/pages/Vault";
 import Shows from "@/pages/Shows";
 import Restoration from "@/pages/Restoration";
 import MobileApp from "@/pages/MobileApp";
+import GradingTracker from "@/pages/GradingTracker";
+import Wantlist from "@/pages/Wantlist";
 import { ModalRoot } from "@/components/modals/ModalRoot";
 
 const queryClient = new QueryClient();
@@ -118,6 +120,8 @@ function Router() {
       <Route path="/shows" component={Shows} />
       <Route path="/restoration" component={Restoration} />
       <Route path="/mobile-app" component={MobileApp} />
+      <Route path="/grading-tracker" component={GradingTracker} />
+      <Route path="/wantlist" component={Wantlist} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route component={NotFound} />

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, ScanLine, FlaskConical, LayoutGrid, Activity, ShoppingCart, ShieldCheck, Calendar, Wrench, Smartphone, LogIn, Crown } from "lucide-react";
+import { Home, ScanLine, FlaskConical, LayoutGrid, Activity, ShoppingCart, ShieldCheck, Calendar, Wrench, Smartphone, LogIn, Crown, ClipboardList, BookmarkPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { openModal } from "@/lib/modal-bus";
 import { useUser, useClerk } from "@clerk/react";
@@ -38,6 +38,8 @@ export function Sidebar() {
     { href: "/shows", label: "Card Shows", icon: Calendar },
     { href: "/restoration", label: "Restoration Lab", icon: Wrench },
     { href: "/mobile-app", label: "Mobile App", icon: Smartphone, badge: "NEW" },
+    { href: "/grading-tracker", label: "Grading Tracker", icon: ClipboardList },
+    { href: "/wantlist", label: "Wantlist", icon: BookmarkPlus },
   ];
 
   const handleManageSubscription = async () => {

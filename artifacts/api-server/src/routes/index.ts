@@ -4,6 +4,8 @@ import portfolioRouter from "./portfolio";
 import scansRouter from "./scans";
 import analyzeListingRouter from "./analyze-listing";
 import stripeRouter from "./stripe";
+import gradingSubmissionsRouter from "./grading-submissions";
+import wantlistRouter from "./wantlist";
 
 const router: IRouter = Router();
 
@@ -12,5 +14,7 @@ router.use(portfolioRouter);
 router.use(scansRouter);
 router.use(analyzeListingRouter);
 router.use(stripeRouter);
+router.use(gradingSubmissionsRouter);
+router.use(wantlistRouter);
 
 export default router;

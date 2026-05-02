@@ -14,6 +14,10 @@ tags:
     description: Portfolio holdings management
   - name: scans
     description: Scan history and AI analysis
+  - name: grading
+    description: Grading submission tracking
+  - name: wantlist
+    description: Cards you want to acquire
 paths:
   /healthz:
     get:
@@ -153,6 +157,220 @@ paths:
                   $ref: "#/components/schemas/PortfolioSnapshot"
         "401":
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /grading-submissions:
+    get:
+      operationId: listGradingSubmissions
+      tags: [grading]
+      summary: List grading submissions
+      description: Returns all grading submissions for the authenticated user, newest first
+      responses:
+        "200":
+          description: List of submissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GradingSubmission"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createGradingSubmission
+      tags: [grading]
+      summary: Log a grading submission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGradingSubmission"
+      responses:
+        "201":
+          description: Created submission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GradingSubmission"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /grading-submissions/{id}:
+    put:
+      operationId: updateGradingSubmission
+      tags: [grading]
+      summary: Update a grading submission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGradingSubmission"
+      responses:
+        "200":
+          description: Updated submission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GradingSubmission"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteGradingSubmission
+      tags: [grading]
+      summary: Remove a grading submission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /wantlist:
+    get:
+      operationId: listWantlistItems
+      tags: [wantlist]
+      summary: List wantlist items
+      description: Returns all wantlist items for the authenticated user
+      responses:
+        "200":
+          description: List of wantlist items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WantlistItem"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createWantlistItem
+      tags: [wantlist]
+      summary: Add a card to wantlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWantlistItem"
+      responses:
+        "201":
+          description: Created wantlist item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WantlistItem"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /wantlist/{id}:
+    put:
+      operationId: updateWantlistItem
+      tags: [wantlist]
+      summary: Update a wantlist item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWantlistItem"
+      responses:
+        "200":
+          description: Updated wantlist item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WantlistItem"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteWantlistItem
+      tags: [wantlist]
+      summary: Remove a wantlist item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
           content:
             application/json:
               schema:
@@ -501,6 +719,157 @@ components:
         - condition
         - notes
         - marketComps
+
+    GradingSubmission:
+      type: object
+      properties:
+        id:
+          type: string
+        cardName:
+          type: string
+        grader:
+          type: string
+          enum: [PSA, BGS, SGC, CGC]
+        serviceLevel:
+          type: string
+        declaredValue:
+          type: integer
+          nullable: true
+        submittedDate:
+          type: string
+          nullable: true
+        returnedDate:
+          type: string
+          nullable: true
+        certNumber:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, in-grading, graded, shipped, completed]
+        gradeReceived:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - cardName
+        - grader
+        - serviceLevel
+        - status
+        - createdAt
+
+    CreateGradingSubmission:
+      type: object
+      properties:
+        cardName:
+          type: string
+        grader:
+          type: string
+          enum: [PSA, BGS, SGC, CGC]
+        serviceLevel:
+          type: string
+        declaredValue:
+          type: integer
+        submittedDate:
+          type: string
+        notes:
+          type: string
+      required:
+        - cardName
+        - grader
+        - serviceLevel
+
+    UpdateGradingSubmission:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, in-grading, graded, shipped, completed]
+        gradeReceived:
+          type: string
+        certNumber:
+          type: string
+        returnedDate:
+          type: string
+        declaredValue:
+          type: integer
+        notes:
+          type: string
+        serviceLevel:
+          type: string
+      minProperties: 1
+
+    WantlistItem:
+      type: object
+      properties:
+        id:
+          type: string
+        cardName:
+          type: string
+        targetGrade:
+          type: string
+        maxPrice:
+          type: integer
+        priority:
+          type: string
+          enum: [low, medium, high]
+        notes:
+          type: string
+          nullable: true
+        acquired:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - cardName
+        - targetGrade
+        - maxPrice
+        - priority
+        - acquired
+        - createdAt
+
+    CreateWantlistItem:
+      type: object
+      properties:
+        cardName:
+          type: string
+        targetGrade:
+          type: string
+        maxPrice:
+          type: integer
+        priority:
+          type: string
+          enum: [low, medium, high]
+        notes:
+          type: string
+      required:
+        - cardName
+        - targetGrade
+        - maxPrice
+
+    UpdateWantlistItem:
+      type: object
+      properties:
+        cardName:
+          type: string
+        targetGrade:
+          type: string
+        maxPrice:
+          type: integer
+        priority:
+          type: string
+          enum: [low, medium, high]
+        notes:
+          type: string
+        acquired:
+          type: boolean
+      minProperties: 1
 
     PortfolioSnapshot:
       type: object

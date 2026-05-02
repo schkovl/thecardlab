@@ -19,14 +19,20 @@ import type {
 import type {
   AnalysisResult,
   AnalyzeListingRequest,
+  CreateGradingSubmission,
   CreatePortfolioHolding,
   CreateScanResult,
+  CreateWantlistItem,
   ErrorResponse,
+  GradingSubmission,
   HealthStatus,
   PortfolioHolding,
   PortfolioSnapshot,
   ScanResult,
+  UpdateGradingSubmission,
   UpdatePortfolioHolding,
+  UpdateWantlistItem,
+  WantlistItem,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -524,6 +530,675 @@ export function useGetPortfolioHistory<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Returns all grading submissions for the authenticated user, newest first
+ * @summary List grading submissions
+ */
+export const getListGradingSubmissionsUrl = () => {
+  return `/api/grading-submissions`;
+};
+
+export const listGradingSubmissions = async (
+  options?: RequestInit,
+): Promise<GradingSubmission[]> => {
+  return customFetch<GradingSubmission[]>(getListGradingSubmissionsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListGradingSubmissionsQueryKey = () => {
+  return [`/api/grading-submissions`] as const;
+};
+
+export const getListGradingSubmissionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listGradingSubmissions>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listGradingSubmissions>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListGradingSubmissionsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listGradingSubmissions>>
+  > = ({ signal }) => listGradingSubmissions({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listGradingSubmissions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListGradingSubmissionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listGradingSubmissions>>
+>;
+export type ListGradingSubmissionsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List grading submissions
+ */
+
+export function useListGradingSubmissions<
+  TData = Awaited<ReturnType<typeof listGradingSubmissions>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listGradingSubmissions>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListGradingSubmissionsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Log a grading submission
+ */
+export const getCreateGradingSubmissionUrl = () => {
+  return `/api/grading-submissions`;
+};
+
+export const createGradingSubmission = async (
+  createGradingSubmission: CreateGradingSubmission,
+  options?: RequestInit,
+): Promise<GradingSubmission> => {
+  return customFetch<GradingSubmission>(getCreateGradingSubmissionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createGradingSubmission),
+  });
+};
+
+export const getCreateGradingSubmissionMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createGradingSubmission>>,
+    TError,
+    { data: BodyType<CreateGradingSubmission> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createGradingSubmission>>,
+  TError,
+  { data: BodyType<CreateGradingSubmission> },
+  TContext
+> => {
+  const mutationKey = ["createGradingSubmission"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createGradingSubmission>>,
+    { data: BodyType<CreateGradingSubmission> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createGradingSubmission(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateGradingSubmissionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createGradingSubmission>>
+>;
+export type CreateGradingSubmissionMutationBody =
+  BodyType<CreateGradingSubmission>;
+export type CreateGradingSubmissionMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Log a grading submission
+ */
+export const useCreateGradingSubmission = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createGradingSubmission>>,
+    TError,
+    { data: BodyType<CreateGradingSubmission> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createGradingSubmission>>,
+  TError,
+  { data: BodyType<CreateGradingSubmission> },
+  TContext
+> => {
+  return useMutation(getCreateGradingSubmissionMutationOptions(options));
+};
+
+/**
+ * @summary Update a grading submission
+ */
+export const getUpdateGradingSubmissionUrl = (id: string) => {
+  return `/api/grading-submissions/${id}`;
+};
+
+export const updateGradingSubmission = async (
+  id: string,
+  updateGradingSubmission: UpdateGradingSubmission,
+  options?: RequestInit,
+): Promise<GradingSubmission> => {
+  return customFetch<GradingSubmission>(getUpdateGradingSubmissionUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateGradingSubmission),
+  });
+};
+
+export const getUpdateGradingSubmissionMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateGradingSubmission>>,
+    TError,
+    { id: string; data: BodyType<UpdateGradingSubmission> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateGradingSubmission>>,
+  TError,
+  { id: string; data: BodyType<UpdateGradingSubmission> },
+  TContext
+> => {
+  const mutationKey = ["updateGradingSubmission"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateGradingSubmission>>,
+    { id: string; data: BodyType<UpdateGradingSubmission> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateGradingSubmission(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateGradingSubmissionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateGradingSubmission>>
+>;
+export type UpdateGradingSubmissionMutationBody =
+  BodyType<UpdateGradingSubmission>;
+export type UpdateGradingSubmissionMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update a grading submission
+ */
+export const useUpdateGradingSubmission = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateGradingSubmission>>,
+    TError,
+    { id: string; data: BodyType<UpdateGradingSubmission> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateGradingSubmission>>,
+  TError,
+  { id: string; data: BodyType<UpdateGradingSubmission> },
+  TContext
+> => {
+  return useMutation(getUpdateGradingSubmissionMutationOptions(options));
+};
+
+/**
+ * @summary Remove a grading submission
+ */
+export const getDeleteGradingSubmissionUrl = (id: string) => {
+  return `/api/grading-submissions/${id}`;
+};
+
+export const deleteGradingSubmission = async (
+  id: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteGradingSubmissionUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteGradingSubmissionMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteGradingSubmission>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteGradingSubmission>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteGradingSubmission"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteGradingSubmission>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteGradingSubmission(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteGradingSubmissionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteGradingSubmission>>
+>;
+
+export type DeleteGradingSubmissionMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Remove a grading submission
+ */
+export const useDeleteGradingSubmission = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteGradingSubmission>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteGradingSubmission>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteGradingSubmissionMutationOptions(options));
+};
+
+/**
+ * Returns all wantlist items for the authenticated user
+ * @summary List wantlist items
+ */
+export const getListWantlistItemsUrl = () => {
+  return `/api/wantlist`;
+};
+
+export const listWantlistItems = async (
+  options?: RequestInit,
+): Promise<WantlistItem[]> => {
+  return customFetch<WantlistItem[]>(getListWantlistItemsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListWantlistItemsQueryKey = () => {
+  return [`/api/wantlist`] as const;
+};
+
+export const getListWantlistItemsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listWantlistItems>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listWantlistItems>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListWantlistItemsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listWantlistItems>>
+  > = ({ signal }) => listWantlistItems({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listWantlistItems>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListWantlistItemsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listWantlistItems>>
+>;
+export type ListWantlistItemsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List wantlist items
+ */
+
+export function useListWantlistItems<
+  TData = Awaited<ReturnType<typeof listWantlistItems>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listWantlistItems>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListWantlistItemsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a card to wantlist
+ */
+export const getCreateWantlistItemUrl = () => {
+  return `/api/wantlist`;
+};
+
+export const createWantlistItem = async (
+  createWantlistItem: CreateWantlistItem,
+  options?: RequestInit,
+): Promise<WantlistItem> => {
+  return customFetch<WantlistItem>(getCreateWantlistItemUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createWantlistItem),
+  });
+};
+
+export const getCreateWantlistItemMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWantlistItem>>,
+    TError,
+    { data: BodyType<CreateWantlistItem> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createWantlistItem>>,
+  TError,
+  { data: BodyType<CreateWantlistItem> },
+  TContext
+> => {
+  const mutationKey = ["createWantlistItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createWantlistItem>>,
+    { data: BodyType<CreateWantlistItem> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createWantlistItem(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateWantlistItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createWantlistItem>>
+>;
+export type CreateWantlistItemMutationBody = BodyType<CreateWantlistItem>;
+export type CreateWantlistItemMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Add a card to wantlist
+ */
+export const useCreateWantlistItem = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWantlistItem>>,
+    TError,
+    { data: BodyType<CreateWantlistItem> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createWantlistItem>>,
+  TError,
+  { data: BodyType<CreateWantlistItem> },
+  TContext
+> => {
+  return useMutation(getCreateWantlistItemMutationOptions(options));
+};
+
+/**
+ * @summary Update a wantlist item
+ */
+export const getUpdateWantlistItemUrl = (id: string) => {
+  return `/api/wantlist/${id}`;
+};
+
+export const updateWantlistItem = async (
+  id: string,
+  updateWantlistItem: UpdateWantlistItem,
+  options?: RequestInit,
+): Promise<WantlistItem> => {
+  return customFetch<WantlistItem>(getUpdateWantlistItemUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateWantlistItem),
+  });
+};
+
+export const getUpdateWantlistItemMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateWantlistItem>>,
+    TError,
+    { id: string; data: BodyType<UpdateWantlistItem> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateWantlistItem>>,
+  TError,
+  { id: string; data: BodyType<UpdateWantlistItem> },
+  TContext
+> => {
+  const mutationKey = ["updateWantlistItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateWantlistItem>>,
+    { id: string; data: BodyType<UpdateWantlistItem> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateWantlistItem(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateWantlistItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateWantlistItem>>
+>;
+export type UpdateWantlistItemMutationBody = BodyType<UpdateWantlistItem>;
+export type UpdateWantlistItemMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update a wantlist item
+ */
+export const useUpdateWantlistItem = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateWantlistItem>>,
+    TError,
+    { id: string; data: BodyType<UpdateWantlistItem> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateWantlistItem>>,
+  TError,
+  { id: string; data: BodyType<UpdateWantlistItem> },
+  TContext
+> => {
+  return useMutation(getUpdateWantlistItemMutationOptions(options));
+};
+
+/**
+ * @summary Remove a wantlist item
+ */
+export const getDeleteWantlistItemUrl = (id: string) => {
+  return `/api/wantlist/${id}`;
+};
+
+export const deleteWantlistItem = async (
+  id: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteWantlistItemUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteWantlistItemMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteWantlistItem>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteWantlistItem>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteWantlistItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteWantlistItem>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteWantlistItem(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteWantlistItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteWantlistItem>>
+>;
+
+export type DeleteWantlistItemMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Remove a wantlist item
+ */
+export const useDeleteWantlistItem = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteWantlistItem>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteWantlistItem>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteWantlistItemMutationOptions(options));
+};
 
 /**
  * Returns scan history for the authenticated user, newest first

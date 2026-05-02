@@ -112,6 +112,137 @@ export interface AnalysisResult {
   marketComps: MarketComps;
 }
 
+export type GradingSubmissionGrader =
+  (typeof GradingSubmissionGrader)[keyof typeof GradingSubmissionGrader];
+
+export const GradingSubmissionGrader = {
+  PSA: "PSA",
+  BGS: "BGS",
+  SGC: "SGC",
+  CGC: "CGC",
+} as const;
+
+export type GradingSubmissionStatus =
+  (typeof GradingSubmissionStatus)[keyof typeof GradingSubmissionStatus];
+
+export const GradingSubmissionStatus = {
+  pending: "pending",
+  "in-grading": "in-grading",
+  graded: "graded",
+  shipped: "shipped",
+  completed: "completed",
+} as const;
+
+export interface GradingSubmission {
+  id: string;
+  cardName: string;
+  grader: GradingSubmissionGrader;
+  serviceLevel: string;
+  declaredValue?: number | null;
+  submittedDate?: string | null;
+  returnedDate?: string | null;
+  certNumber?: string | null;
+  status: GradingSubmissionStatus;
+  gradeReceived?: string | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export type CreateGradingSubmissionGrader =
+  (typeof CreateGradingSubmissionGrader)[keyof typeof CreateGradingSubmissionGrader];
+
+export const CreateGradingSubmissionGrader = {
+  PSA: "PSA",
+  BGS: "BGS",
+  SGC: "SGC",
+  CGC: "CGC",
+} as const;
+
+export interface CreateGradingSubmission {
+  cardName: string;
+  grader: CreateGradingSubmissionGrader;
+  serviceLevel: string;
+  declaredValue?: number;
+  submittedDate?: string;
+  notes?: string;
+}
+
+export type UpdateGradingSubmissionStatus =
+  (typeof UpdateGradingSubmissionStatus)[keyof typeof UpdateGradingSubmissionStatus];
+
+export const UpdateGradingSubmissionStatus = {
+  pending: "pending",
+  "in-grading": "in-grading",
+  graded: "graded",
+  shipped: "shipped",
+  completed: "completed",
+} as const;
+
+export interface UpdateGradingSubmission {
+  status?: UpdateGradingSubmissionStatus;
+  gradeReceived?: string;
+  certNumber?: string;
+  returnedDate?: string;
+  declaredValue?: number;
+  notes?: string;
+  serviceLevel?: string;
+}
+
+export type WantlistItemPriority =
+  (typeof WantlistItemPriority)[keyof typeof WantlistItemPriority];
+
+export const WantlistItemPriority = {
+  low: "low",
+  medium: "medium",
+  high: "high",
+} as const;
+
+export interface WantlistItem {
+  id: string;
+  cardName: string;
+  targetGrade: string;
+  maxPrice: number;
+  priority: WantlistItemPriority;
+  notes?: string | null;
+  acquired: boolean;
+  createdAt: string;
+}
+
+export type CreateWantlistItemPriority =
+  (typeof CreateWantlistItemPriority)[keyof typeof CreateWantlistItemPriority];
+
+export const CreateWantlistItemPriority = {
+  low: "low",
+  medium: "medium",
+  high: "high",
+} as const;
+
+export interface CreateWantlistItem {
+  cardName: string;
+  targetGrade: string;
+  maxPrice: number;
+  priority?: CreateWantlistItemPriority;
+  notes?: string;
+}
+
+export type UpdateWantlistItemPriority =
+  (typeof UpdateWantlistItemPriority)[keyof typeof UpdateWantlistItemPriority];
+
+export const UpdateWantlistItemPriority = {
+  low: "low",
+  medium: "medium",
+  high: "high",
+} as const;
+
+export interface UpdateWantlistItem {
+  cardName?: string;
+  targetGrade?: string;
+  maxPrice?: number;
+  priority?: UpdateWantlistItemPriority;
+  notes?: string;
+  acquired?: boolean;
+}
+
 export interface PortfolioSnapshot {
   id: string;
   /** ISO date string e.g. 2026-05-01 */

@@ -94,6 +94,144 @@ export const GetPortfolioHistoryResponse = zod.array(
 );
 
 /**
+ * Returns all grading submissions for the authenticated user, newest first
+ * @summary List grading submissions
+ */
+export const ListGradingSubmissionsResponseItem = zod.object({
+  id: zod.string(),
+  cardName: zod.string(),
+  grader: zod.enum(["PSA", "BGS", "SGC", "CGC"]),
+  serviceLevel: zod.string(),
+  declaredValue: zod.number().nullish(),
+  submittedDate: zod.string().nullish(),
+  returnedDate: zod.string().nullish(),
+  certNumber: zod.string().nullish(),
+  status: zod.enum(["pending", "in-grading", "graded", "shipped", "completed"]),
+  gradeReceived: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+export const ListGradingSubmissionsResponse = zod.array(
+  ListGradingSubmissionsResponseItem,
+);
+
+/**
+ * @summary Log a grading submission
+ */
+export const CreateGradingSubmissionBody = zod.object({
+  cardName: zod.string(),
+  grader: zod.enum(["PSA", "BGS", "SGC", "CGC"]),
+  serviceLevel: zod.string(),
+  declaredValue: zod.number().optional(),
+  submittedDate: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update a grading submission
+ */
+export const UpdateGradingSubmissionParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdateGradingSubmissionBody = zod.object({
+  status: zod
+    .enum(["pending", "in-grading", "graded", "shipped", "completed"])
+    .optional(),
+  gradeReceived: zod.string().optional(),
+  certNumber: zod.string().optional(),
+  returnedDate: zod.string().optional(),
+  declaredValue: zod.number().optional(),
+  notes: zod.string().optional(),
+  serviceLevel: zod.string().optional(),
+});
+
+export const UpdateGradingSubmissionResponse = zod.object({
+  id: zod.string(),
+  cardName: zod.string(),
+  grader: zod.enum(["PSA", "BGS", "SGC", "CGC"]),
+  serviceLevel: zod.string(),
+  declaredValue: zod.number().nullish(),
+  submittedDate: zod.string().nullish(),
+  returnedDate: zod.string().nullish(),
+  certNumber: zod.string().nullish(),
+  status: zod.enum(["pending", "in-grading", "graded", "shipped", "completed"]),
+  gradeReceived: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Remove a grading submission
+ */
+export const DeleteGradingSubmissionParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
+ * Returns all wantlist items for the authenticated user
+ * @summary List wantlist items
+ */
+export const ListWantlistItemsResponseItem = zod.object({
+  id: zod.string(),
+  cardName: zod.string(),
+  targetGrade: zod.string(),
+  maxPrice: zod.number(),
+  priority: zod.enum(["low", "medium", "high"]),
+  notes: zod.string().nullish(),
+  acquired: zod.boolean(),
+  createdAt: zod.string(),
+});
+export const ListWantlistItemsResponse = zod.array(
+  ListWantlistItemsResponseItem,
+);
+
+/**
+ * @summary Add a card to wantlist
+ */
+export const CreateWantlistItemBody = zod.object({
+  cardName: zod.string(),
+  targetGrade: zod.string(),
+  maxPrice: zod.number(),
+  priority: zod.enum(["low", "medium", "high"]).optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update a wantlist item
+ */
+export const UpdateWantlistItemParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdateWantlistItemBody = zod.object({
+  cardName: zod.string().optional(),
+  targetGrade: zod.string().optional(),
+  maxPrice: zod.number().optional(),
+  priority: zod.enum(["low", "medium", "high"]).optional(),
+  notes: zod.string().optional(),
+  acquired: zod.boolean().optional(),
+});
+
+export const UpdateWantlistItemResponse = zod.object({
+  id: zod.string(),
+  cardName: zod.string(),
+  targetGrade: zod.string(),
+  maxPrice: zod.number(),
+  priority: zod.enum(["low", "medium", "high"]),
+  notes: zod.string().nullish(),
+  acquired: zod.boolean(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Remove a wantlist item
+ */
+export const DeleteWantlistItemParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
  * Returns scan history for the authenticated user, newest first
  * @summary List scan history
  */
