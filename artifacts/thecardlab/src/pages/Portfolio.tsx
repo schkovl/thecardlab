@@ -89,8 +89,15 @@ export default function Portfolio() {
 
   const totalValue = holdings.reduce((s, h) => s + h.value, 0);
   const totalCost = holdings.reduce((s, h) => s + h.cost, 0);
-  const totalGain = totalValue - totalCost;
-  const gainPct = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
+
+  const windowStart = chartData.length >= 2 ? chartData[0].value : null;
+  const windowEnd = chartData.length >= 2 ? chartData[chartData.length - 1].value : null;
+  const windowGain = windowStart !== null && windowEnd !== null ? windowEnd - windowStart : null;
+  const windowGainPct =
+    windowGain !== null && windowStart !== null && windowStart > 0
+      ? (windowGain / windowStart) * 100
+      : null;
+  const windowLabel = timeRange === 'ALL' ? 'All Time' : timeRange;
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -296,9 +303,9 @@ export default function Portfolio() {
               <div className="text-xs font-black text-muted-foreground tracking-[0.5px] uppercase">Portfolio Value</div>
               <div className="text-[32px] font-black mt-1">
                 ${totalValue.toLocaleString()}
-                {totalCost > 0 && (
-                  <span className={`text-base ml-3 ${totalGain >= 0 ? "text-secondary" : "text-destructive"}`}>
-                    {totalGain >= 0 ? "+" : ""}{gainPct.toFixed(1)}% All Time
+                {windowGainPct !== null && (
+                  <span className={`text-base ml-3 ${windowGainPct >= 0 ? "text-secondary" : "text-destructive"}`}>
+                    {windowGainPct >= 0 ? "+" : ""}{windowGainPct.toFixed(1)}% {windowLabel}
                   </span>
                 )}
               </div>
