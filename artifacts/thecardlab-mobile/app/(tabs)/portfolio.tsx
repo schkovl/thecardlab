@@ -73,23 +73,66 @@ export default function PortfolioScreen() {
 
   const deleteMutation = useDeletePortfolioHolding({
     mutation: {
-      onSuccess: () => {
+      onMutate: async ({ id }) => {
+        await qc.cancelQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
+        const previousHoldings = qc.getQueryData<PortfolioHolding[]>(getListPortfolioHoldingsQueryKey());
+        qc.setQueryData<PortfolioHolding[]>(
+          getListPortfolioHoldingsQueryKey(),
+          (old) => (old ?? []).filter((h) => h.id !== id)
+        );
+        return { previousHoldings };
+      },
+      onError: (_err, _vars, context) => {
+        const ctx = context as { previousHoldings?: PortfolioHolding[] } | undefined;
+        if (ctx?.previousHoldings !== undefined) {
+          qc.setQueryData(getListPortfolioHoldingsQueryKey(), ctx.previousHoldings);
+        }
+        Alert.alert("Error", "Failed to remove card");
+      },
+      onSettled: () => {
         qc.invalidateQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
         qc.invalidateQueries({ queryKey: getGetPortfolioHistoryQueryKey() });
         setEditItem(null);
       },
-      onError: () => Alert.alert("Error", "Failed to remove card"),
     },
   });
 
   const updateMutation = useUpdatePortfolioHolding({
     mutation: {
-      onSuccess: () => {
+      onMutate: async ({ id, data }) => {
+        await qc.cancelQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
+        const previousHoldings = qc.getQueryData<PortfolioHolding[]>(getListPortfolioHoldingsQueryKey());
+        qc.setQueryData<PortfolioHolding[]>(
+          getListPortfolioHoldingsQueryKey(),
+          (old) =>
+            (old ?? []).map((h) => {
+              if (h.id !== id) return h;
+              const newCost = data.cost ?? h.cost;
+              const newValue = data.value ?? h.value;
+              const newGainPct = newCost > 0 ? ((newValue - newCost) / newCost) * 100 : 0;
+              return {
+                ...h,
+                grade: data.grade ?? h.grade,
+                cost: newCost,
+                value: newValue,
+                gainPct: newGainPct,
+              };
+            })
+        );
+        return { previousHoldings };
+      },
+      onError: (_err, _vars, context) => {
+        const ctx = context as { previousHoldings?: PortfolioHolding[] } | undefined;
+        if (ctx?.previousHoldings !== undefined) {
+          qc.setQueryData(getListPortfolioHoldingsQueryKey(), ctx.previousHoldings);
+        }
+        Alert.alert("Error", "Failed to update card");
+      },
+      onSettled: () => {
         qc.invalidateQueries({ queryKey: getListPortfolioHoldingsQueryKey() });
         qc.invalidateQueries({ queryKey: getGetPortfolioHistoryQueryKey() });
         setEditItem(null);
       },
-      onError: () => Alert.alert("Error", "Failed to update card"),
     },
   });
 
