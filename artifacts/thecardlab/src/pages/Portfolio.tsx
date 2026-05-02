@@ -326,6 +326,12 @@ export default function Portfolio() {
           </div>
 
           <div className="h-[240px] w-full">
+            {chartData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full gap-2">
+                <p className="text-sm font-bold text-muted-foreground">No data for this period</p>
+                <p className="text-xs text-muted-foreground/60">Visit the portfolio page daily to build up history</p>
+              </div>
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
                 <defs>
@@ -343,6 +349,7 @@ export default function Portfolio() {
                 <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
               </AreaChart>
             </ResponsiveContainer>
+            )}
           </div>
         </HoloCard>
 
