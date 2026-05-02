@@ -90,13 +90,15 @@ export default function Portfolio() {
   const totalValue = holdings.reduce((s, h) => s + h.value, 0);
   const totalCost = holdings.reduce((s, h) => s + h.cost, 0);
 
-  const windowStart = chartData.length >= 2 ? chartData[0].value : null;
-  const windowEnd = chartData.length >= 2 ? chartData[chartData.length - 1].value : null;
+  const windowStart = chartData.length > 0 ? chartData[0].value : null;
+  const windowEnd = chartData.length > 0 ? chartData[chartData.length - 1].value : null;
   const windowGain = windowStart !== null && windowEnd !== null ? windowEnd - windowStart : null;
   const windowGainPct =
     windowGain !== null && windowStart !== null && windowStart > 0
       ? (windowGain / windowStart) * 100
-      : null;
+      : windowStart === 0 || windowGain === 0
+        ? 0
+        : null;
   const windowLabel = timeRange === 'ALL' ? 'All Time' : timeRange;
 
   const handleAddSubmit = (e: React.FormEvent) => {
