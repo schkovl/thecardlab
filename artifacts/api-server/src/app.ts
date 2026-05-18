@@ -1,5 +1,8 @@
 import express, { type Express } from "express";
 import cors from "cors";
+import helmet from "helmet";
+import compression from "compression";
+import rateLimit from "express-rate-limit";
 import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
@@ -13,6 +16,16 @@ import {
 } from "./middlewares/clerkProxyMiddleware";
 
 const app: Express = express();
+
+app.set("trust proxy", 1);
+app.disable("x-powered-by");
+app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: "cross-origin" } }));
+app.use(compression());
+
+const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? "https://thecardlab.app,https://www.thecardlab.app")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 app.use(
   pinoHttp({
@@ -36,7 +49,38 @@ app.use(
 
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
-app.use(cors({ credentials: true, origin: true }));
+app.use(
+  cors({
+    credentials: true,
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+      if (process.env.NODE_ENV !== "production") return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error(`Origin ${origin} not allowed`));
+    },
+  }),
+);
+
+const keyByAuth = (req: express.Request) => {
+  const auth = (req as unknown as { auth?: { userId?: string } }).auth;
+  return auth?.userId ?? req.ip ?? "anon";
+};
+
+const writeLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 120,
+  keyGenerator: keyByAuth,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+});
+
+const aiLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 20,
+  keyGenerator: keyByAuth,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+});
 
 app.use(
   clerkMiddleware((req) => ({
@@ -45,6 +89,11 @@ app.use(
       process.env.CLERK_PUBLISHABLE_KEY,
     ),
   })),
+);
+
+app.use("/api/analyze-listing", aiLimiter);
+app.use(["/api/scans", "/api/grading-submissions", "/api/wantlist", "/api/portfolio"], (req, _res, next) =>
+  req.method === "GET" ? next() : writeLimiter(req, _res, next),
 );
 
 app.post(

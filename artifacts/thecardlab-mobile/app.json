@@ -20,10 +20,14 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.thecardlab.app",
       "buildNumber": "1",
+      "usesAppleSignIn": true,
+      "entitlements": {
+        "com.apple.developer.applesignin": ["Default"]
+      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "UIBackgroundModes": [],
-        "LSApplicationQueriesSchemes": ["https", "mailto"]
+        "LSApplicationQueriesSchemes": ["https", "mailto", "fb", "fbapi", "fbauth2", "googlechromes", "googlechrome", "msauth", "msauthv2", "msauthv3"]
       }
     },
     "android": {
@@ -49,6 +53,7 @@
       ],
       "expo-font",
       "expo-web-browser",
+      "expo-apple-authentication",
       [
         "expo-splash-screen",
         {

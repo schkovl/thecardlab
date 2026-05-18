@@ -1,0 +1,17 @@
+**/node_modules
+**/dist
+**/.next
+**/.expo
+**/static-build
+**/ios
+**/android
+.git
+.github
+**/.vscode
+**/*.log
+**/.DS_Store
+attached_assets
+artifacts/thecardlab/dist
+artifacts/thecardlab-mobile/static-build
+artifacts/thecardlab-mobile/ios
+artifacts/thecardlab-mobile/android

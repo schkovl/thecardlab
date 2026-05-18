@@ -47,3 +47,22 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Secrets — never commit
+**/google-play-service-account.json
+**/AuthKey_*.p8
+**/*.keystore
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Mobile build outputs
+artifacts/thecardlab-mobile/static-build
+artifacts/thecardlab-mobile/ios/Pods
+artifacts/thecardlab-mobile/ios/build
+artifacts/thecardlab-mobile/android/build
+artifacts/thecardlab-mobile/android/app/build
+artifacts/thecardlab-mobile/android/.gradle
+artifacts/thecardlab-mobile/.metro-cache
+.vercel
+.env*.local

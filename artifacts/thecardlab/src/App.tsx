@@ -19,6 +19,10 @@ import Restoration from "@/pages/Restoration";
 import MobileApp from "@/pages/MobileApp";
 import GradingTracker from "@/pages/GradingTracker";
 import Wantlist from "@/pages/Wantlist";
+import Privacy from "@/pages/Privacy";
+import Terms from "@/pages/Terms";
+import SupportPage from "@/pages/Support";
+import Pricing from "@/pages/Pricing";
 import { ModalRoot } from "@/components/modals/ModalRoot";
 
 const queryClient = new QueryClient();
@@ -122,6 +126,10 @@ function Router() {
       <Route path="/mobile-app" component={MobileApp} />
       <Route path="/grading-tracker" component={GradingTracker} />
       <Route path="/wantlist" component={Wantlist} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/support" component={SupportPage} />
+      <Route path="/pricing" component={Pricing} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route component={NotFound} />

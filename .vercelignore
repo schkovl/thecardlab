@@ -1,0 +1,37 @@
+# Dependencies (Vercel installs them remotely)
+node_modules
+.pnpm
+.pnpm-store
+**/node_modules
+**/.pnpm
+
+# Local caches
+.local
+.vercel
+.turbo
+**/.turbo
+**/.cache
+**/cache
+
+# Build outputs (Vercel rebuilds)
+dist
+build
+.next
+**/.next
+**/dist
+**/build
+
+# VCS
+.git
+*.log
+coverage
+
+# Replit-specific
+.replit
+.replitignore
+attached_assets
+
+# Editor / OS
+.DS_Store
+.vscode
+.idea
