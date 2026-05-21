@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
+const API = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+
 export interface MarketSignal {
   type: "price_drop" | "pop_update" | "market_trend";
   card: string;
@@ -54,7 +56,7 @@ export interface CardComps {
 export function useMarketPulse() {
   return useQuery<MarketPulse>({
     queryKey: ["market", "pulse"],
-    queryFn: () => fetch("/api/market/pulse").then((r) => r.json()),
+    queryFn: () => fetch(`${API}/api/market/pulse`).then((r) => r.json()),
     staleTime: 10 * 60 * 1000,
     retry: 2,
   });
@@ -63,7 +65,7 @@ export function useMarketPulse() {
 export function useMarketTrending() {
   return useQuery<MarketTrending>({
     queryKey: ["market", "trending"],
-    queryFn: () => fetch("/api/market/trending").then((r) => r.json()),
+    queryFn: () => fetch(`${API}/api/market/trending`).then((r) => r.json()),
     staleTime: 30 * 60 * 1000,
     retry: 2,
   });
@@ -72,7 +74,7 @@ export function useMarketTrending() {
 export function useMarketListings(q = "sports cards graded PSA") {
   return useQuery<EbayListing[]>({
     queryKey: ["market", "listings", q],
-    queryFn: () => fetch(`/api/market/listings?q=${encodeURIComponent(q)}`).then((r) => r.json()),
+    queryFn: () => fetch(`${API}/api/market/listings?q=${encodeURIComponent(q)}`).then((r) => r.json()),
     staleTime: 5 * 60 * 1000,
     retry: 2,
   });
@@ -81,7 +83,7 @@ export function useMarketListings(q = "sports cards graded PSA") {
 export function useMarketComps(card: string) {
   return useQuery<CardComps>({
     queryKey: ["market", "comps", card],
-    queryFn: () => fetch(`/api/market/comps?card=${encodeURIComponent(card)}`).then((r) => r.json()),
+    queryFn: () => fetch(`${API}/api/market/comps?card=${encodeURIComponent(card)}`).then((r) => r.json()),
     enabled: !!card,
     staleTime: 30 * 60 * 1000,
     retry: 2,

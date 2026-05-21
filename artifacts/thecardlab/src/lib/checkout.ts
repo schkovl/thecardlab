@@ -6,7 +6,7 @@ export type CheckoutResult =
 
 export async function startCheckout(plan: PlanId): Promise<CheckoutResult> {
   try {
-    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    const base = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
     const res = await fetch(`${base}/api/checkout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -47,7 +47,7 @@ export async function startCheckout(plan: PlanId): Promise<CheckoutResult> {
 
 export async function openCustomerPortal(returnUrl?: string): Promise<CheckoutResult> {
   try {
-    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    const base = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
     const res = await fetch(`${base}/api/portal`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

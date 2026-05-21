@@ -82,6 +82,14 @@ const aiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const marketLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 30,
+  keyGenerator: keyByAuth,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+});
+
 app.get("/api/healthz", (_req, res) => {
   res.json({ status: "ok" });
 });
@@ -96,6 +104,7 @@ app.use(
 );
 
 app.use("/api/analyze-listing", aiLimiter);
+app.use("/api/market", marketLimiter);
 app.use(["/api/scans", "/api/grading-submissions", "/api/wantlist", "/api/portfolio"], (req, _res, next) =>
   req.method === "GET" ? next() : writeLimiter(req, _res, next),
 );

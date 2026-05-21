@@ -12,7 +12,7 @@ const TODAY = () => new Date().toISOString().split("T")[0];
 // Market index, sentiment, top mover. Cached 10 min.
 router.get("/market/pulse", async (_req, res) => {
   const cacheKey = `market:pulse:${TODAY()}`;
-  const cached = cache.get<object>(cacheKey);
+  const cached = await cache.get<object>(cacheKey);
   if (cached) { res.json(cached); return; }
 
   // Fetch real sold prices for key cards to ground the AI response
@@ -59,7 +59,7 @@ Based on current sports news, player performance, and card market trends, return
     const raw = completion.choices[0]?.message?.content ?? "{}";
     let data: object;
     try { data = JSON.parse(raw); } catch { data = {}; }
-    cache.set(cacheKey, data, 10 * 60 * 1000);
+    await cache.set(cacheKey, data, 10 * 60 * 1000);
     res.json(data);
   } catch (err) {
     logger.error({ err }, "GET /market/pulse error");
@@ -74,12 +74,12 @@ router.get("/market/comps", async (req, res) => {
   if (!card) { res.status(400).json({ error: "card query param required" }); return; }
 
   const cacheKey = `market:comps:${card.toLowerCase()}`;
-  const cached = cache.get<object>(cacheKey);
+  const cached = await cache.get<object>(cacheKey);
   if (cached) { res.json(cached); return; }
 
   try {
     const comps = await fetchCardComps(card);
-    cache.set(cacheKey, comps, 30 * 60 * 1000);
+    await cache.set(cacheKey, comps, 30 * 60 * 1000);
     res.json(comps);
   } catch (err) {
     logger.error({ err, card }, "GET /market/comps error");
@@ -91,7 +91,7 @@ router.get("/market/comps", async (req, res) => {
 // Trending players + sets. Cached 30 min.
 router.get("/market/trending", async (_req, res) => {
   const cacheKey = `market:trending:${TODAY()}`;
-  const cached = cache.get<object>(cacheKey);
+  const cached = await cache.get<object>(cacheKey);
   if (cached) { res.json(cached); return; }
 
   const prompt = `Today is ${TODAY()}. You are a sports card market analyst.
@@ -116,7 +116,7 @@ Based on current sports season, recent game results, player news, and card marke
     const raw = completion.choices[0]?.message?.content ?? "{}";
     let data: object;
     try { data = JSON.parse(raw); } catch { data = { players: [], sets: [] }; }
-    cache.set(cacheKey, data, 30 * 60 * 1000);
+    await cache.set(cacheKey, data, 30 * 60 * 1000);
     res.json(data);
   } catch (err) {
     logger.error({ err }, "GET /market/trending error");
@@ -129,12 +129,12 @@ Based on current sports season, recent game results, player news, and card marke
 router.get("/market/listings", async (req, res) => {
   const q = String(req.query.q ?? "sports cards graded PSA").trim();
   const cacheKey = `market:listings:${q}`;
-  const cached = cache.get<unknown[]>(cacheKey);
+  const cached = await cache.get<unknown[]>(cacheKey);
   if (cached) { res.json(cached); return; }
 
   try {
     const listings = await fetchActiveListings(q, 8);
-    cache.set(cacheKey, listings, 5 * 60 * 1000);
+    await cache.set(cacheKey, listings, 5 * 60 * 1000);
     res.json(listings);
   } catch (err) {
     logger.error({ err }, "GET /market/listings error");

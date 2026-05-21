@@ -35,7 +35,7 @@ export function useSubscription(): SubscriptionStatus {
       return;
     }
 
-    const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+    const base = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
     fetch(`${base}/api/me`, { credentials: "include" })
       .then((res) => {
