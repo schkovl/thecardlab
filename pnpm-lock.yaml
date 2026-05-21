@@ -744,6 +744,10 @@ importers:
       react:
         specifier: '>=18'
         version: 19.2.6
+    devDependencies:
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.15
 
   lib/integrations-openai-ai-server:
     dependencies:
