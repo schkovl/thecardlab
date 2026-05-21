@@ -107,7 +107,7 @@ export function Sidebar() {
               </div>
               <div>
                 <div className="font-semibold text-sm text-primary">Sign in</div>
-                <div className="text-[11px] text-muted-foreground">Google · Apple · GitHub</div>
+                <div className="text-[11px] text-muted-foreground">Google · Microsoft</div>
               </div>
             </div>
           </Link>
