@@ -3,6 +3,7 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 import { AnalyzeListingBody, AnalyzeListingResponse } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 import { logger } from "../lib/logger.js";
+import { fetchCardComps } from "../lib/ebay.js";
 
 const router: IRouter = Router();
 
@@ -135,6 +136,25 @@ router.post("/analyze-listing", requireAuth, async (req, res) => {
     logger.error({ issues: result.error.issues, raw }, "AI response failed schema validation");
     res.status(500).json({ error: "AI response did not match expected schema" });
     return;
+  }
+
+  try {
+    const realComps = await fetchCardComps(result.data.cardName);
+    const hasRealData = realComps.raw.length > 0 || realComps.psa10.length > 0;
+    if (hasRealData) {
+      res.json({
+        ...result.data,
+        marketComps: {
+          raw: realComps.raw.length ? realComps.raw : result.data.marketComps.raw,
+          psa8: realComps.psa8.length ? realComps.psa8 : result.data.marketComps.psa8,
+          psa9: realComps.psa9.length ? realComps.psa9 : result.data.marketComps.psa9,
+          psa10: realComps.psa10.length ? realComps.psa10 : result.data.marketComps.psa10,
+        },
+      });
+      return;
+    }
+  } catch (compsErr) {
+    logger.warn({ compsErr }, "Real comps fetch failed — using AI estimates");
   }
 
   res.json(result.data);

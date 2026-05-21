@@ -6,8 +6,11 @@ import { mockScans } from "@/data/scans";
 import { Zap, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "wouter";
+import { useMarketPulse } from "@/hooks/useMarketData";
 
 export default function Dashboard() {
+  const { data: pulse } = useMarketPulse();
+
   return (
     <Shell>
       <div className="flex items-end justify-between mb-6">
@@ -84,19 +87,30 @@ export default function Dashboard() {
             <h2 className="text-sm font-black uppercase tracking-wider text-[#edf6ff] mb-4">Market Pulse</h2>
             <div className="bg-white/5 rounded-xl p-4 border border-border">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-bold text-muted-foreground">TCL INDEX (BASKETBALL)</span>
-                <Pill variant="teal">BULLISH</Pill>
+                <span className="text-xs font-bold text-muted-foreground">TCL INDEX</span>
+                <Pill variant={pulse?.sentiment === "BEARISH" ? "red" : pulse?.sentiment === "BULLISH" ? "teal" : "gold"}>
+                  {pulse?.sentiment ?? "—"}
+                </Pill>
               </div>
-              <div className="text-2xl font-black mb-4">1,482.40 <span className="text-sm text-secondary ml-2">▲ 2.4%</span></div>
-              
+              <div className="text-2xl font-black mb-4">
+                {pulse ? pulse.index.toLocaleString() : "—"}
+                {pulse && (
+                  <span className={`text-sm ml-2 ${pulse.change7d >= 0 ? "text-secondary" : "text-destructive"}`}>
+                    {pulse.change7d >= 0 ? "▲" : "▼"} {Math.abs(pulse.change7d)}%
+                  </span>
+                )}
+              </div>
+
               <div className="space-y-3 mt-4 pt-4 border-t border-border">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Volume (24h)</span>
-                  <span className="font-bold">$4.2M</span>
+                  <span className="font-bold">{pulse?.volume24h ?? "—"}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Top Mover</span>
-                  <span className="font-bold text-accent">Ant. Edwards</span>
+                  <span className="font-bold text-accent">
+                    {pulse ? `${pulse.topMover} ${pulse.topMoverChange}` : "—"}
+                  </span>
                 </div>
               </div>
             </div>

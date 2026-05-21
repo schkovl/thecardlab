@@ -6,6 +6,7 @@ import analyzeListingRouter from "./analyze-listing";
 import stripeRouter from "./stripe";
 import gradingSubmissionsRouter from "./grading-submissions";
 import wantlistRouter from "./wantlist";
+import marketRouter from "./market";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(analyzeListingRouter);
 router.use(stripeRouter);
 router.use(gradingSubmissionsRouter);
 router.use(wantlistRouter);
+router.use(marketRouter);
 
 export default router;

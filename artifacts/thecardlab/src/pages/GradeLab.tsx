@@ -3,8 +3,23 @@ import { HoloCard } from "@/components/cards/HoloCard";
 import { Pill } from "@/components/cards/Pill";
 import wembyImg from "@/assets/cards/wemby.png";
 import { CheckCircle2, Crosshair, AlertTriangle } from "lucide-react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
+import { useLocation } from "wouter";
 
 export default function GradeLab() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [, navigate] = useLocation();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    toast.success(`Uploaded "${file.name}" — running AI analysis…`);
+  };
+
   return (
     <Shell>
       <div className="flex items-end justify-between mb-6">
@@ -14,7 +29,8 @@ export default function GradeLab() {
           <p className="text-muted-foreground text-sm max-w-2xl">High-resolution centering overlays and surface defect detection.</p>
         </div>
         <div className="flex gap-3">
-          <button className="h-10 px-5 rounded-xl bg-white/5 border border-border text-foreground font-bold hover:bg-white/10 transition-colors">Upload Scans</button>
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+          <button onClick={() => fileInputRef.current?.click()} className="h-10 px-5 rounded-xl bg-white/5 border border-border text-foreground font-bold hover:bg-white/10 transition-colors">Upload Scans</button>
         </div>
       </div>
 
@@ -28,7 +44,7 @@ export default function GradeLab() {
               </div>
             </div>
             <div className="flex-1 bg-black/50 relative flex items-center justify-center p-8 overflow-hidden group">
-              <img src={wembyImg} alt="Card" className="h-full object-contain shadow-2xl relative z-10" />
+              <img src={previewUrl ?? wembyImg} alt="Card" className="h-full object-contain shadow-2xl relative z-10" />
               
               {/* Centering Overlay Simulation */}
               <div className="absolute inset-0 pointer-events-none z-20 flex flex-col justify-between p-8 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -85,7 +101,7 @@ export default function GradeLab() {
             <div className="p-5 rounded-xl bg-gradient-to-r from-primary/10 to-transparent border border-primary/20">
               <h4 className="font-bold text-primary mb-2">Recommendation: Submit to PSA</h4>
               <p className="text-sm text-foreground/80 mb-4">High probability of gem mint. Expected value increase of $1,200 post-grading. Processing time is currently estimated at 45 days for standard tier.</p>
-              <button className="h-10 px-6 rounded-lg bg-primary text-[#03111c] font-bold text-sm hover:brightness-110 transition-all">Start PSA Submission</button>
+              <button onClick={() => navigate("/grading-tracker")} className="h-10 px-6 rounded-lg bg-primary text-[#03111c] font-bold text-sm hover:brightness-110 transition-all">Start PSA Submission</button>
             </div>
           </HoloCard>
         </div>
