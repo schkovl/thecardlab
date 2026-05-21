@@ -2,7 +2,8 @@
   "name": "thecardlab-monorepo",
   "private": true,
   "scripts": {
-    "build": "cd artifacts/thecardlab && pnpm build"
+    "build": "cd artifacts/thecardlab && pnpm build",
+    "typecheck": "pnpm -r --if-present run typecheck"
   },
   "packageManager": "pnpm@11.1.2",
   "engines": {
