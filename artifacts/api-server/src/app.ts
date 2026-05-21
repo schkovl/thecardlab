@@ -82,6 +82,10 @@ const aiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+app.get("/api/healthz", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
 app.use(
   clerkMiddleware((req) => ({
     publishableKey: publishableKeyFromHost(

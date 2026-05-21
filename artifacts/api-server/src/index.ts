@@ -1,4 +1,3 @@
-import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync } from "./stripeClient";
 import app from "./app";
 import { logger } from "./lib/logger";
@@ -28,13 +27,14 @@ async function initStripe() {
   try {
     logger.info("Initializing Stripe schema...");
     try {
+      const { runMigrations } = await import("stripe-replit-sync");
       await runMigrations({ databaseUrl });
       logger.info("Stripe schema ready");
     } catch (migErr) {
       logger.warn({ migErr }, "runMigrations encountered an issue (may already be applied), continuing...");
     }
 
-    const stripeSync = await getStripeSync();
+    const stripeSync = await getStripeSync() as any;
 
     const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(",")[0]}`;
     const webhookResult = await stripeSync.findOrCreateManagedWebhook(
@@ -48,7 +48,7 @@ async function initStripe() {
     stripeSync
       .syncBackfill()
       .then(() => logger.info("Stripe data synced"))
-      .catch((err) => logger.error({ err }, "Error syncing Stripe data"));
+      .catch((err: unknown) => logger.error({ err }, "Error syncing Stripe data"));
 
     logger.info("Stripe initialized successfully");
   } catch (err) {

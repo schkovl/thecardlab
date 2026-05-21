@@ -11,6 +11,7 @@
   "pnpm": {
     "catalog": {
       "@replit/wite-plugin-cartographer": "*"
-    }
+    },
+    "onlyBuiltDependencies": ["esbuild", "esbuild-plugin-pino"]
   }
 }

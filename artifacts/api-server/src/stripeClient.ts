@@ -1,5 +1,4 @@
-import Stripe from 'stripe';
-import { StripeSync } from 'stripe-replit-sync';
+import type Stripe from 'stripe';
 
 async function getCredentials(): Promise<{ publishableKey: string; secretKey: string }> {
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
@@ -46,16 +45,18 @@ async function getCredentials(): Promise<{ publishableKey: string; secretKey: st
 
 export async function getUncachableStripeClient(): Promise<Stripe> {
   const { secretKey } = await getCredentials();
-  return new Stripe(secretKey);
+  const { default: StripeLib } = await import('stripe');
+  return new StripeLib(secretKey);
 }
 
-export async function getStripeSync(): Promise<StripeSync> {
+export async function getStripeSync(): Promise<unknown> {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     throw new Error('DATABASE_URL environment variable is required');
   }
 
   const { secretKey } = await getCredentials();
+  const { StripeSync } = await import('stripe-replit-sync');
   return new StripeSync({
     poolConfig: { connectionString: databaseUrl },
     stripeSecretKey: secretKey,

@@ -100,6 +100,8 @@ async function buildAll() {
       "puppeteer",
       "puppeteer-core",
       "electron",
+      "stripe-replit-sync",
+      "stripe",
     ],
     sourcemap: "linked",
     plugins: [
