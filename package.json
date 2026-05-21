@@ -12,14 +12,6 @@
     "catalog": {
       "@replit/wite-plugin-cartographer": "*"
     },
-    "onlyBuiltDependencies": [
-      "@clerk/shared",
-      "browser-tabs-lock",
-      "bufferutil",
-      "core-js",
-      "esbuild",
-      "esbuild-plugin-pino",
-      "utf-8-validate"
-    ]
+    "onlyBuiltDependencies": ["esbuild", "esbuild-plugin-pino"]
   }
 }
