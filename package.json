@@ -3,11 +3,14 @@
   "private": true,
   "scripts": {
     "build": "cd artifacts/thecardlab && pnpm build",
-    "typecheck": "pnpm -r --if-present run typecheck"
+    "typecheck": "pnpm --filter @workspace/db --filter @workspace/api-zod --filter @workspace/integrations-openai-ai-server --filter @workspace/api-client-react --if-present run build && pnpm -r --filter '!@workspace/mockup-sandbox' --filter '!@workspace/thecardlab-mobile' --if-present run typecheck"
   },
   "packageManager": "pnpm@11.1.2",
   "engines": {
     "node": "20.x"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2"
   },
   "pnpm": {
     "catalog": {

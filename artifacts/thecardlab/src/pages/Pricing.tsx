@@ -94,7 +94,7 @@ export default function Pricing() {
           return (
             <div
               key={t.name}
-              className={`rounded-2xl border bg-[#0d1a31] p-6 ${t.highlight ? "border-primary/60 ring-1 ring-primary/30" : "border-border"}`}
+              className={`rounded-2xl border bg-[#0d1a31] p-6 ${('highlight' in t && t.highlight) ? "border-primary/60 ring-1 ring-primary/30" : "border-border"}`}
             >
               <div className="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-1">{t.name}</div>
               <div className="text-4xl font-display font-black mb-1">${price}<span className="text-base text-muted-foreground font-normal">{price > 0 ? per : ""}</span></div>
@@ -109,7 +109,7 @@ export default function Pricing() {
                 <button
                   onClick={() => handleCta(t.action)}
                   disabled={loading && t.action === "pro"}
-                  className={`w-full h-10 rounded-xl text-xs font-bold mb-5 transition-colors disabled:opacity-60 ${t.highlight ? "bg-primary text-background hover:bg-primary/90" : "bg-white/5 border border-border hover:bg-white/10"}`}
+                  className={`w-full h-10 rounded-xl text-xs font-bold mb-5 transition-colors disabled:opacity-60 ${('highlight' in t && t.highlight) ? "bg-primary text-background hover:bg-primary/90" : "bg-white/5 border border-border hover:bg-white/10"}`}
                 >
                   {loading && t.action === "pro" ? "Redirecting…" : t.cta}
                 </button>
