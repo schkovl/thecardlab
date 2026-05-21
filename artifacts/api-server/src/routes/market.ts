@@ -52,7 +52,7 @@ Based on current sports news, player performance, and card market trends, return
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-5.4",
+      model: "gpt-4o",
       max_completion_tokens: 1024,
       messages: [{ role: "user", content: prompt }],
     });
@@ -109,7 +109,7 @@ Based on current sports season, recent game results, player news, and card marke
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-5.4",
+      model: "gpt-4o",
       max_completion_tokens: 512,
       messages: [{ role: "user", content: prompt }],
     });

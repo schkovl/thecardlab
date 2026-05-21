@@ -3,5 +3,8 @@
   "installCommand": "pnpm install --no-frozen-lockfile --ignore-scripts",
   "buildCommand": "cd artifacts/thecardlab && pnpm build",
   "outputDirectory": "artifacts/thecardlab/dist/public",
-  "framework": null
+  "framework": null,
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://api.thecardlab.app/api/:path*" }
+  ]
 }
