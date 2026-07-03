@@ -1,8 +1,8 @@
-import wembyImg from "@/assets/cards/wemby.png";
-import herbertImg from "@/assets/cards/herbert.png";
-import charizardImg from "@/assets/cards/charizard.png";
-import lawrenceImg from "@/assets/cards/lawrence.png";
-import ohtaniImg from "@/assets/cards/ohtani.png";
+import wembyImg from "@/assets/cards/wemby.webp";
+import herbertImg from "@/assets/cards/herbert.webp";
+import charizardImg from "@/assets/cards/charizard.webp";
+import lawrenceImg from "@/assets/cards/lawrence.webp";
+import ohtaniImg from "@/assets/cards/ohtani.webp";
 
 export const mockMarketplace = [
   { id: 1, title: "2023 Prizm Victor Wembanyama Silver", price: 1850, type: "Slabbed", grade: "PSA 10", image: wembyImg, time: "2h left", bids: 14 },

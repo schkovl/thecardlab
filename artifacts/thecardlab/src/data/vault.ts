@@ -1,6 +1,6 @@
-import wembyImg from "@/assets/cards/wemby.png";
-import ohtaniImg from "@/assets/cards/ohtani.png";
-import charizardImg from "@/assets/cards/charizard.png";
+import wembyImg from "@/assets/cards/wemby.webp";
+import ohtaniImg from "@/assets/cards/ohtani.webp";
+import charizardImg from "@/assets/cards/charizard.webp";
 
 export const mockVaultItems = [
   { id: "V-001", card: "2023 Prizm Victor Wembanyama Silver PSA 10", insuredValue: 1850, location: "Delaware Vault", status: "Secured", image: wembyImg, dateStored: "2023-12-01" },

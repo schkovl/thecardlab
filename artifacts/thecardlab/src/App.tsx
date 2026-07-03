@@ -3,31 +3,59 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster as Sonner } from "sonner";
-import { ClerkProvider, SignIn, SignUp } from "@clerk/react";
+import { ClerkProvider, SignIn, useAuth } from "@clerk/react";
 import { shadcn } from "@clerk/themes";
+import { useEffect, Suspense, lazy } from "react";
+import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { SignUpForm } from "@/components/auth/SignUpForm";
 
-import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/Dashboard";
-import DealScreener from "@/pages/DealScreener";
-import GradeLab from "@/pages/GradeLab";
-import Portfolio from "@/pages/Portfolio";
-import Research from "@/pages/Research";
-import Marketplace from "@/pages/Marketplace";
-import Vault from "@/pages/Vault";
-import Shows from "@/pages/Shows";
-import Restoration from "@/pages/Restoration";
-import MobileApp from "@/pages/MobileApp";
-import GradingTracker from "@/pages/GradingTracker";
-import Wantlist from "@/pages/Wantlist";
-import Privacy from "@/pages/Privacy";
-import Terms from "@/pages/Terms";
-import SupportPage from "@/pages/Support";
-import Pricing from "@/pages/Pricing";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ModalRoot } from "@/components/modals/ModalRoot";
+import SSOCallback from "@/pages/SSOCallback";
+import SSOContinue from "@/pages/SSOContinue";
+import { CurrencyProvider } from "@/hooks/useCurrency";
+
+const NotFound     = lazy(() => import("@/pages/not-found"));
+const Landing      = lazy(() => import("@/pages/Landing"));
+const Dashboard    = lazy(() => import("@/pages/Dashboard"));
+const DealScreener = lazy(() => import("@/pages/DealScreener"));
+const GradeLab     = lazy(() => import("@/pages/GradeLab"));
+const Portfolio    = lazy(() => import("@/pages/Portfolio"));
+const Research     = lazy(() => import("@/pages/Research"));
+const Marketplace  = lazy(() => import("@/pages/Marketplace"));
+const Vault        = lazy(() => import("@/pages/Vault"));
+const Shows        = lazy(() => import("@/pages/Shows"));
+const Restoration  = lazy(() => import("@/pages/Restoration"));
+const MobileApp    = lazy(() => import("@/pages/MobileApp"));
+const GradingTracker = lazy(() => import("@/pages/GradingTracker"));
+const Wantlist     = lazy(() => import("@/pages/Wantlist"));
+const Privacy      = lazy(() => import("@/pages/Privacy"));
+const Terms        = lazy(() => import("@/pages/Terms"));
+const SupportPage  = lazy(() => import("@/pages/Support"));
+const Pricing      = lazy(() => import("@/pages/Pricing"));
+const Settings     = lazy(() => import("@/pages/Settings"));
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
+
+// Wire api-client to the Fly.io API server
+setBaseUrl(
+  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ??
+  "https://api.thecardlab.app"
+);
+
+function ApiAuthSync() {
+  const { getToken } = useAuth();
+  useEffect(() => {
+    setAuthTokenGetter(async () => {
+      try { return await getToken(); } catch { return null; }
+    });
+    return () => { setAuthTokenGetter(null); };
+  }, [getToken]);
+  return null;
+}
 
 function stripBase(path: string): string {
   return basePath && path.startsWith(basePath)
@@ -39,9 +67,7 @@ const clerkAppearance = {
   baseTheme: shadcn,
   cssLayerName: "clerk",
   options: {
-    logoPlacement: "inside" as const,
-    logoLinkUrl: basePath || "/",
-    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+    logoPlacement: "none" as const,
     socialButtonsVariant: "blockButton" as const,
   },
   variables: {
@@ -71,8 +97,8 @@ const clerkAppearance = {
     identityPreviewEditButton: "text-[#00e5ff]",
     formFieldSuccessText: "text-[#22d3a6]",
     alertText: "text-[#e2e8f0]",
-    logoBox: "mb-2",
-    logoImage: "h-8 w-auto",
+    logoBox: { display: "none" },
+    logoImage: { display: "none" },
     socialButtonsBlockButton: "!border !border-[#1e3a5f] !bg-[#050914] hover:!bg-[#0d1a31] !rounded-xl !font-semibold",
     formButtonPrimary: "!bg-[#00e5ff] !text-[#03111c] !font-black hover:!bg-[#22d3a6] !rounded-xl !shadow-[0_0_20px_rgba(0,229,255,0.3)]",
     formFieldInput: "!bg-[#050914] !border-[#1e3a5f] !text-[#e2e8f0] !rounded-xl",
@@ -85,55 +111,89 @@ const clerkAppearance = {
   },
 };
 
-function SignInPage() {
+function AuthShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-[#050914] px-4">
-      <SignIn
-        routing="path"
-        path={`${basePath}/sign-in`}
-        signUpUrl={`${basePath}/sign-up`}
-        forceRedirectUrl={`${basePath}/`}
+    <div className="relative flex min-h-[100dvh] items-center justify-center bg-[#050914] px-4 overflow-hidden">
+      {/* Atmospheric glow */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full bg-[#00e5ff]/[0.04] blur-[120px]" />
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-[#7c3aed]/[0.05] blur-[90px]" />
+      </div>
+      {/* Grid lines */}
+      <div className="pointer-events-none absolute inset-0 opacity-[0.03]"
+        style={{ backgroundImage: "linear-gradient(#00e5ff 1px, transparent 1px), linear-gradient(90deg, #00e5ff 1px, transparent 1px)", backgroundSize: "60px 60px" }}
       />
+      <div className="relative z-10 flex flex-col items-center gap-8 w-full">
+        <a href={basePath || "/"} className="flex items-center group opacity-90 hover:opacity-100 transition-opacity">
+          <img src={`${window.location.origin}${basePath}/logo.svg`} alt="TheCardLab" className="h-8 w-auto" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+        </a>
+        {children}
+        <p className="text-xs text-[#475569] text-center">AI-powered sports card intelligence</p>
+      </div>
     </div>
   );
 }
 
-function SignUpPage() {
+function SignInPage() {
+  usePageMeta("Sign In — TheCardLab", "Sign in to TheCardLab — AI-powered sports card analytics.");
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-[#050914] px-4">
-      <SignUp
+    <AuthShell>
+      <SignIn
         routing="path"
-        path={`${basePath}/sign-up`}
-        signInUrl={`${basePath}/sign-in`}
-        forceRedirectUrl={`${basePath}/`}
+        path={`${basePath}/sign-in`}
+        signUpUrl={`${basePath}/sign-up`}
+        fallbackRedirectUrl={`${basePath}/dashboard`}
       />
-    </div>
+    </AuthShell>
+  );
+}
+
+function SignUpPage() {
+  usePageMeta("Create Account — TheCardLab", "Join TheCardLab — AI-powered sports card grading, deal screening, and portfolio analytics.");
+  return (
+    <AuthShell>
+      <SignUpForm
+        signInUrl={`${basePath}/sign-in`}
+        redirectUrl={`${basePath}/dashboard`}
+      />
+    </AuthShell>
   );
 }
 
 function Router() {
   return (
+    <Suspense fallback={<div className="min-h-[100dvh] bg-[#050914]" />}>
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/deal-screener" component={DealScreener} />
-      <Route path="/grade-lab" component={GradeLab} />
-      <Route path="/portfolio" component={Portfolio} />
-      <Route path="/research" component={Research} />
-      <Route path="/marketplace" component={Marketplace} />
-      <Route path="/vault" component={Vault} />
-      <Route path="/shows" component={Shows} />
-      <Route path="/restoration" component={Restoration} />
-      <Route path="/mobile-app" component={MobileApp} />
-      <Route path="/grading-tracker" component={GradingTracker} />
-      <Route path="/wantlist" component={Wantlist} />
+      {/* Public */}
+      <Route path="/" component={Landing} />
+      <Route path="/sign-in/*?" component={SignInPage} />
+      <Route path="/sign-up/*?" component={SignUpPage} />
+      <Route path="/sso-callback" component={SSOCallback} />
+      <Route path="/sso-continue" component={SSOContinue} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />
       <Route path="/support" component={SupportPage} />
       <Route path="/pricing" component={Pricing} />
-      <Route path="/sign-in/*?" component={SignInPage} />
-      <Route path="/sign-up/*?" component={SignUpPage} />
+
+      {/* Protected app routes */}
+      <Route path="/dashboard">{() => <ProtectedRoute component={Dashboard} />}</Route>
+      <Route path="/deal-screener">{() => <ProtectedRoute component={DealScreener} />}</Route>
+      <Route path="/grade-lab">{() => <ProtectedRoute component={GradeLab} />}</Route>
+      <Route path="/portfolio">{() => <ProtectedRoute component={Portfolio} />}</Route>
+      <Route path="/research">{() => <ProtectedRoute component={Research} />}</Route>
+      <Route path="/marketplace">{() => <ProtectedRoute component={Marketplace} />}</Route>
+      <Route path="/vault">{() => <ProtectedRoute component={Vault} />}</Route>
+      <Route path="/shows">{() => <ProtectedRoute component={Shows} />}</Route>
+      <Route path="/restoration">{() => <ProtectedRoute component={Restoration} />}</Route>
+      <Route path="/mobile-app">{() => <ProtectedRoute component={MobileApp} />}</Route>
+      <Route path="/settings">{() => <ProtectedRoute component={Settings} />}</Route>
+      <Route path="/grading-tracker">{() => <ProtectedRoute component={GradingTracker} />}</Route>
+      <Route path="/wantlist">{() => <ProtectedRoute component={Wantlist} />}</Route>
+
+      <Route path="/market">{() => <ProtectedRoute component={Research} />}</Route>
       <Route component={NotFound} />
     </Switch>
+    </Suspense>
   );
 }
 
@@ -146,8 +206,8 @@ function ClerkProviderWithRoutes() {
       appearance={clerkAppearance}
       signInUrl={`${basePath}/sign-in`}
       signUpUrl={`${basePath}/sign-up`}
-      signInFallbackRedirectUrl={`${basePath}/`}
-      signUpFallbackRedirectUrl={`${basePath}/`}
+      signInFallbackRedirectUrl={`${basePath}/dashboard`}
+      signUpFallbackRedirectUrl={`${basePath}/dashboard`}
       localization={{
         signIn: {
           start: {
@@ -165,14 +225,17 @@ function ClerkProviderWithRoutes() {
       routerPush={(to) => setLocation(stripBase(to))}
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Router />
-          <ModalRoot />
-        </TooltipProvider>
-        <Toaster />
-        <Sonner theme="dark" position="bottom-center" />
-      </QueryClientProvider>
+      <ApiAuthSync />
+      <CurrencyProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Router />
+            <ModalRoot />
+          </TooltipProvider>
+          <Toaster />
+          <Sonner theme="dark" position="bottom-center" />
+        </QueryClientProvider>
+      </CurrencyProvider>
     </ClerkProvider>
   );
 }

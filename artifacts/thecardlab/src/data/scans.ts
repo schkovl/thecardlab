@@ -1,8 +1,8 @@
-import wembyImg from "@/assets/cards/wemby.png";
-import herbertImg from "@/assets/cards/herbert.png";
-import charizardImg from "@/assets/cards/charizard.png";
-import lawrenceImg from "@/assets/cards/lawrence.png";
-import ohtaniImg from "@/assets/cards/ohtani.png";
+import wembyImg from "@/assets/cards/wemby.webp";
+import herbertImg from "@/assets/cards/herbert.webp";
+import charizardImg from "@/assets/cards/charizard.webp";
+import lawrenceImg from "@/assets/cards/lawrence.webp";
+import ohtaniImg from "@/assets/cards/ohtani.webp";
 
 export const mockScans = [
   { id: 1, card: "2023 Prizm Victor Wembanyama Silver", date: "Just now", expectedGrade: "PSA 10", expectedValue: "$1,850", image: wembyImg, condition: "Mint" },

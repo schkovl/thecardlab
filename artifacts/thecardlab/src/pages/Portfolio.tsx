@@ -2,10 +2,13 @@ import { Shell } from "@/components/layout/Shell";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { Pill } from "@/components/cards/Pill";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { ArrowUpRight, Loader2, Trash2, X, Plus, Pencil } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Loader2, Trash2, X, Plus, Pencil } from "lucide-react";
 import { useState } from "react";
+import { ScanAddCardModal } from "@/components/modals/ScanAddCardModal";
 import { useUser } from "@clerk/react";
 import { toast } from "sonner";
+import { useCurrency } from "@/hooks/useCurrency";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import {
   useListPortfolioHoldings,
   useCreatePortfolioHolding,
@@ -20,8 +23,10 @@ import { useQueryClient } from "@tanstack/react-query";
 const GRADES = ["Raw", "PSA 7", "PSA 8", "PSA 9", "PSA 10", "BGS 9", "BGS 9.5", "SGC 10"];
 
 export default function Portfolio() {
+  usePageMeta("Portfolio & Comps — TheCardLab", "Track your card holdings, unrealized gains, and live market comparables. Build your collection history over time.");
   const { isSignedIn, isLoaded } = useUser();
   const qc = useQueryClient();
+  const { fmt, fmtSub, isCad } = useCurrency();
 
   const { data: holdings = [], isLoading, error } = useListPortfolioHoldings({
     query: { enabled: isLoaded && !!isSignedIn, queryKey: getListPortfolioHoldingsQueryKey() },
@@ -153,10 +158,10 @@ export default function Portfolio() {
 
   return (
     <Shell>
-      <div className="flex items-end justify-between mb-6">
+      <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
         <div>
           <div className="text-xs text-primary tracking-[0.16em] uppercase font-black mb-1">Analytics</div>
-          <h1 className="text-4xl font-display font-bold tracking-tight mb-2">Portfolio & Comps</h1>
+          <h1 className="text-2xl lg:text-4xl font-display font-bold tracking-tight mb-2">Portfolio & Comps</h1>
           <p className="text-muted-foreground text-sm max-w-2xl">Track your holdings, unrealized gains, and market comparables.</p>
         </div>
         {isSignedIn && (
@@ -194,7 +199,7 @@ export default function Portfolio() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Cost Basis ($)</label>
+                  <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Cost Basis ({isCad ? "CAD" : "USD"})</label>
                   <input
                     type="number"
                     min="0"
@@ -205,7 +210,7 @@ export default function Portfolio() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Current Value ($) *</label>
+                  <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Current Value ({isCad ? "CAD" : "USD"}) *</label>
                   <input
                     type="number"
                     min="0"
@@ -229,82 +234,26 @@ export default function Portfolio() {
         </div>
       )}
 
-      {/* Add Item modal */}
+      {/* Scan Add Card Modal */}
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md bg-[#0d1a31] border border-border rounded-2xl p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">Add to Portfolio</h2>
-              <button onClick={() => setShowAdd(false)} className="text-muted-foreground hover:text-foreground transition-colors">
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleAddSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Card Name *</label>
-                <input
-                  value={form.card}
-                  onChange={(e) => setForm((f) => ({ ...f, card: e.target.value }))}
-                  placeholder="e.g. 2023 Prizm Wembanyama Silver RC"
-                  className="w-full h-10 bg-white/5 border border-border rounded-lg px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Grade</label>
-                <select
-                  value={form.grade}
-                  onChange={(e) => setForm((f) => ({ ...f, grade: e.target.value }))}
-                  className="w-full h-10 bg-white/5 border border-border rounded-lg px-3 text-sm text-foreground focus:outline-none focus:border-primary/50 transition-colors"
-                >
-                  {GRADES.map((g) => (
-                    <option key={g} value={g} className="bg-[#0d1a31]">{g}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Cost Basis ($) *</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.cost}
-                    onChange={(e) => setForm((f) => ({ ...f, cost: e.target.value }))}
-                    placeholder="0"
-                    className="w-full h-10 bg-white/5 border border-border rounded-lg px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Current Value ($) *</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.value}
-                    onChange={(e) => setForm((f) => ({ ...f, value: e.target.value }))}
-                    placeholder="0"
-                    className="w-full h-10 bg-white/5 border border-border rounded-lg px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                disabled={createMutation.isPending}
-                className="w-full h-10 rounded-xl bg-gradient-to-br from-primary to-[#00bcd4] text-[#03111c] font-bold flex items-center justify-center gap-2 hover:-translate-y-0.5 transition-transform disabled:opacity-50 disabled:hover:translate-y-0"
-              >
-                {createMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : null}
-                Add to Portfolio
-              </button>
-            </form>
-          </div>
-        </div>
+        <ScanAddCardModal
+          onClose={() => setShowAdd(false)}
+          onSaved={(card, grade, cost, value) => {
+            createMutation.mutate({ data: { card, grade, cost, value } });
+          }}
+        />
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <HoloCard className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
               <div className="text-xs font-black text-muted-foreground tracking-[0.5px] uppercase">Portfolio Value</div>
               <div className="text-[32px] font-black mt-1">
-                ${totalValue.toLocaleString()}
+                {fmt(totalValue)}
+                {fmtSub(totalValue) && (
+                  <span className="text-sm font-normal text-muted-foreground ml-2">{fmtSub(totalValue)}</span>
+                )}
                 {windowGainPct !== null && (
                   <span className={`text-base ml-3 ${windowGainPct >= 0 ? "text-secondary" : "text-destructive"}`}>
                     {windowGainPct >= 0 ? "+" : ""}{windowGainPct.toFixed(1)}% {windowLabel}
@@ -312,7 +261,7 @@ export default function Portfolio() {
                 )}
               </div>
             </div>
-            <div className="flex gap-2 bg-white/5 p-1 rounded-lg">
+            <div className="flex gap-1.5 bg-white/5 p-1 rounded-lg self-start sm:self-auto">
               {(['1W', '1M', '3M', 'YTD', 'ALL'] as const).map((tf) => (
                 <button
                   key={tf}
@@ -345,6 +294,7 @@ export default function Portfolio() {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0d1a31', borderColor: 'rgba(142,164,192,0.12)', borderRadius: '12px' }}
                   itemStyle={{ color: '#00e5ff', fontWeight: 'bold' }}
+                  formatter={(value: number) => [fmt(value), "Value"]}
                 />
                 <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
               </AreaChart>
@@ -364,8 +314,10 @@ export default function Portfolio() {
                     <div className="text-xs text-muted-foreground">{item.grade}</div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="font-bold text-sm">${item.value.toLocaleString()}</div>
-                    <div className="text-xs text-secondary flex items-center justify-end gap-0.5"><ArrowUpRight size={12}/> {item.gainPct.toFixed(1)}%</div>
+                    <div className="font-bold text-sm">{fmt(item.value)}</div>
+                    <div className={`text-xs flex items-center justify-end gap-0.5 ${item.gainPct >= 0 ? "text-secondary" : "text-destructive"}`}>
+                      {item.gainPct >= 0 ? <ArrowUpRight size={12}/> : <ArrowDownRight size={12}/>} {item.gainPct.toFixed(1)}%
+                    </div>
                   </div>
                 </div>
               ))}
@@ -414,11 +366,11 @@ export default function Portfolio() {
                     <td className="py-3 px-4">
                       <Pill variant={item.grade.includes('10') ? 'teal' : item.grade === 'Raw' ? 'violet' : 'cyan'}>{item.grade}</Pill>
                     </td>
-                    <td className="py-3 px-4 text-right text-muted-foreground">${item.cost.toLocaleString()}</td>
-                    <td className="py-3 px-4 text-right font-bold">${item.value.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-right text-muted-foreground">{fmt(item.cost)}</td>
+                    <td className="py-3 px-4 text-right font-bold">{fmt(item.value)}</td>
                     <td className="py-3 px-4 text-right">
                       <div className={`font-bold ${item.gain >= 0 ? "text-secondary" : "text-destructive"}`}>
-                        {item.gain >= 0 ? "+" : ""}${item.gain.toLocaleString()}
+                        {item.gain >= 0 ? "+" : "-"}{fmt(Math.abs(item.gain))}
                       </div>
                       <div className={`text-xs ${item.gain >= 0 ? "text-secondary" : "text-destructive"}`}>{item.gainPct.toFixed(1)}%</div>
                     </td>
