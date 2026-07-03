@@ -44,6 +44,11 @@ export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
 }
 
+export async function getAuthToken(): Promise<string | null> {
+  if (!_authTokenGetter) return null;
+  try { return await _authTokenGetter(); } catch { return null; }
+}
+
 function isRequest(input: RequestInfo | URL): input is Request {
   return typeof Request !== "undefined" && input instanceof Request;
 }

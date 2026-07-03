@@ -65,6 +65,7 @@
     "react-icons": "^5.4.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "^2.15.2",
+    "sharp": "^0.35.3",
     "sonner": "^2.0.7",
     "tailwind-merge": "catalog:",
     "tailwindcss": "catalog:",
@@ -72,11 +73,13 @@
     "typescript": "~5.9.3",
     "vaul": "^1.1.2",
     "vite": "catalog:",
+    "vite-imagetools": "^10.0.1",
     "wouter": "^3.3.5",
     "zod": "catalog:"
   },
   "dependencies": {
     "@clerk/react": "^6.4.6",
-    "@clerk/themes": "^2.4.57"
+    "@clerk/themes": "^2.4.57",
+    "@sentry/react": "^10.59.0"
   }
 }

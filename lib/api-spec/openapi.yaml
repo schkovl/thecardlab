@@ -18,6 +18,8 @@ tags:
     description: Grading submission tracking
   - name: wantlist
     description: Cards you want to acquire
+  - name: alerts
+    description: User-created market alerts
 paths:
   /healthz:
     get:
@@ -247,6 +249,78 @@ paths:
       operationId: deleteGradingSubmission
       tags: [grading]
       summary: Remove a grading submission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /alerts:
+    get:
+      operationId: listAlerts
+      tags: [alerts]
+      summary: List user alerts
+      description: Returns all active alerts for the authenticated user
+      responses:
+        "200":
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserAlert"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createAlert
+      tags: [alerts]
+      summary: Create an alert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAlert"
+      responses:
+        "201":
+          description: Created alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserAlert"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /alerts/{id}:
+    delete:
+      operationId: deleteAlert
+      tags: [alerts]
+      summary: Dismiss an alert
       parameters:
         - name: id
           in: path
@@ -803,6 +877,44 @@ components:
         serviceLevel:
           type: string
       minProperties: 1
+
+    UserAlert:
+      type: object
+      properties:
+        id:
+          type: string
+        cardName:
+          type: string
+        alertType:
+          type: string
+          enum: [price_drop, pop_update, market_trend]
+        thresholdPrice:
+          type: integer
+          nullable: true
+        active:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - cardName
+        - alertType
+        - active
+        - createdAt
+
+    CreateAlert:
+      type: object
+      properties:
+        cardName:
+          type: string
+        alertType:
+          type: string
+          enum: [price_drop, pop_update, market_trend]
+        thresholdPrice:
+          type: integer
+      required:
+        - cardName
+        - alertType
 
     WantlistItem:
       type: object
