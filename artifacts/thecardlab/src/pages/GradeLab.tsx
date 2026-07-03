@@ -500,7 +500,7 @@ export default function GradeLab() {
               </p>
               {scanAnalysis?.recommendation !== "Pass" && (
                 <button
-                  onClick={() => navigate("/grading-tracker")}
+                  onClick={() => navigate(`/grading-tracker?card=${encodeURIComponent(cardName)}&openSubmission=1`)}
                   className="h-10 px-6 rounded-lg bg-primary text-[#03111c] font-bold text-sm hover:brightness-110 transition-all"
                 >
                   Start PSA Submission

@@ -943,8 +943,8 @@ function HeroCards() {
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 const FEATURES = [
-  { icon: ScanLine, color: "text-primary", bg: "border-primary/20 bg-primary/5", title: "AI Deal Screener", desc: "Paste any eBay URL. Get instant grade probability, ROI projection, and a Grade It / Pass verdict in under 3 seconds.", href: "/deal-screener" },
   { icon: FlaskConical, color: "text-[#22d3a6]", bg: "border-[#22d3a6]/20 bg-[#22d3a6]/5", title: "Grade Lab", desc: "Upload card scans. AI detects centering, surface defects, and corner wear — with live eBay comps to back every prediction.", href: "/grade-lab" },
+  { icon: ScanLine, color: "text-primary", bg: "border-primary/20 bg-primary/5", title: "AI Deal Screener", desc: "Paste any eBay URL. Get instant grade probability, ROI projection, and a Grade It / Pass verdict in under 3 seconds.", href: "/deal-screener" },
   { icon: LayoutGrid, color: "text-accent", bg: "border-accent/20 bg-accent/5", title: "Portfolio Tracker", desc: "Add every card with cost basis. Watch live valuations update in real time. See your gain/loss per card and overall.", href: "/portfolio" },
   { icon: ShieldCheck, color: "text-[#a78bfa]", bg: "border-[#a78bfa]/20 bg-[#a78bfa]/5", title: "Global Vault", desc: "Secure off-site storage for your highest-value graded slabs. Whale plan feature — contact support for availability and onboarding.", href: "/vault" },
   { icon: ClipboardList, color: "text-[#fb7185]", bg: "border-[#fb7185]/20 bg-[#fb7185]/5", title: "Grading Tracker", desc: "Track every PSA / BGS submission from mailing to return. Know where every card is, every day.", href: "/grading-tracker" },
@@ -1013,7 +1013,7 @@ export default function Landing() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6 relative z-10">
           <SignUpButton mode="redirect" forceRedirectUrl={`${basePath}/dashboard`}>
             <button className="h-14 px-8 rounded-2xl bg-gradient-to-r from-primary to-[#00bcd4] text-[#03111c] font-black text-lg hover:brightness-110 shadow-[0_10px_40px_rgba(0,229,255,0.35)] transition-all flex items-center gap-2.5 w-full sm:w-auto justify-center">
-              Get Started Free <ArrowRight size={20} />
+              Grade Your First Card Free <ArrowRight size={20} />
             </button>
           </SignUpButton>
           <Link href={`${basePath}/pricing`}>
@@ -1024,7 +1024,7 @@ export default function Landing() {
         </div>
         <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mb-10 relative z-10">
           <span className="text-sm text-[#475569] flex items-center gap-1.5"><CheckCircle2 size={13} className="text-primary/60" /> No credit card required</span>
-          <span className="text-sm text-[#475569] flex items-center gap-1.5"><CheckCircle2 size={13} className="text-primary/60" /> Free tier always available</span>
+          <span className="text-sm text-[#475569] flex items-center gap-1.5"><CheckCircle2 size={13} className="text-primary/60" /> 3 Grade Lab + 5 Deal Screener scans free</span>
           <span className="text-sm text-[#475569] flex items-center gap-1.5"><Smartphone size={13} className="text-primary/60" /> iOS · Android · Desktop PWA</span>
         </div>
       </section>

@@ -2,7 +2,7 @@ import { Shell } from "@/components/layout/Shell";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { Pill } from "@/components/cards/Pill";
 import { ClipboardList, Plus, X, Loader2, Pencil, CheckCircle2, Clock, Package, Truck, FlaskConical } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@clerk/react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -80,6 +80,17 @@ export default function GradingTracker() {
   });
 
   const [showAdd, setShowAdd] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const card = params.get("card");
+    const openSubmission = params.get("openSubmission");
+    if (card && openSubmission === "1") {
+      setForm((f) => ({ ...f, cardName: card }));
+      setShowAdd(true);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editStatus, setEditStatus] = useState<Status>("pending");
