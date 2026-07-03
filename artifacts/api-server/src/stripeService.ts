@@ -14,7 +14,9 @@ export class StripeService {
     customerId: string,
     priceId: string,
     successUrl: string,
-    cancelUrl: string
+    cancelUrl: string,
+    userId: string,
+    couponId?: string
   ) {
     const stripe = await getUncachableStripeClient();
     return await stripe.checkout.sessions.create({
@@ -24,6 +26,10 @@ export class StripeService {
       mode: 'subscription',
       success_url: successUrl,
       cancel_url: cancelUrl,
+      metadata: { userId },
+      subscription_data: { metadata: { userId } },
+      allow_promotion_codes: couponId ? undefined : true,
+      discounts: couponId ? [{ coupon: couponId }] : undefined,
     });
   }
 

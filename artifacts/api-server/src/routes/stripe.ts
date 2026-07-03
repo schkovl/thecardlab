@@ -1,24 +1,32 @@
 import { Router, type IRouter } from 'express';
-import { requireAuth } from '@clerk/express';
+import { getAuth } from '@clerk/express';
+import { requireAuth } from '../middlewares/requireAuth';
 import { storage } from '../storage';
 import { stripeService } from '../stripeService';
+import { getUncachableStripeClient } from '../stripeClient';
 import { logger } from '../lib/logger';
+import type Stripe from 'stripe';
 
 const router: IRouter = Router();
 
-router.get('/me', requireAuth(), async (req: any, res) => {
+router.get('/me', requireAuth, async (req: any, res) => {
   try {
-    const userId = req.auth.userId as string;
-    const email = req.auth.sessionClaims?.email as string | undefined;
+    const { userId, sessionClaims } = getAuth(req);
+    const email = sessionClaims?.email as string | undefined;
 
     let user = await storage.getUser(userId);
     if (!user) {
       user = await storage.upsertUser(userId, email);
     }
 
-    let subscription = null;
+    let subscription: Stripe.Subscription | null = null;
     if (user?.stripeSubscriptionId) {
-      subscription = await storage.getSubscription(user.stripeSubscriptionId);
+      try {
+        const stripe = await getUncachableStripeClient();
+        subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+      } catch (err) {
+        logger.warn({ err, subscriptionId: user.stripeSubscriptionId }, 'Failed to fetch subscription from Stripe');
+      }
     }
 
     const isPro = subscription?.status === 'active' || subscription?.status === 'trialing';
@@ -42,27 +50,27 @@ router.get('/me', requireAuth(), async (req: any, res) => {
   }
 });
 
-router.post('/checkout', requireAuth(), async (req: any, res): Promise<void> => {
+router.post('/checkout', requireAuth, async (req: any, res): Promise<void> => {
   try {
-    const userId = req.auth.userId as string;
-    const email = req.auth.sessionClaims?.email as string | undefined;
-    const { priceId, plan, successUrl, cancelUrl } = req.body as {
+    const { userId, sessionClaims } = getAuth(req);
+    const email = sessionClaims?.email as string | undefined;
+    const { priceId, plan, successUrl, cancelUrl, couponId } = req.body as {
       priceId?: string;
       plan?: 'pro_monthly' | 'pro_annual';
       successUrl: string;
       cancelUrl: string;
+      couponId?: string;
     };
 
     let resolvedPriceId = priceId;
 
     if (!resolvedPriceId && plan) {
       const interval = plan === 'pro_annual' ? 'year' : 'month';
-      const prices = await storage.listPrices(true, 50, 0);
-      const match = (prices as Array<{ id: string; recurring?: { interval?: string } }>).find(
-        (p) => p.recurring?.interval === interval
-      );
+      const stripe = await getUncachableStripeClient();
+      const prices = await stripe.prices.list({ active: true, limit: 50 });
+      const match = prices.data.find((p) => p.recurring?.interval === interval);
       if (!match) {
-        res.status(400).json({ error: `No price found for plan: ${plan}. Run the seed-products script first.` });
+        res.status(400).json({ error: `No active Stripe price found for interval: ${interval}. Create products in Stripe first.` });
         return;
       }
       resolvedPriceId = match.id;
@@ -90,7 +98,9 @@ router.post('/checkout', requireAuth(), async (req: any, res): Promise<void> => 
       customerId,
       resolvedPriceId,
       successUrl ?? `${baseUrl}/?checkout=success`,
-      cancelUrl ?? `${baseUrl}/?checkout=cancelled`
+      cancelUrl ?? `${baseUrl}/?checkout=cancelled`,
+      userId,
+      couponId
     );
 
     res.json({ url: session.url });
@@ -100,9 +110,9 @@ router.post('/checkout', requireAuth(), async (req: any, res): Promise<void> => 
   }
 });
 
-router.post('/portal', requireAuth(), async (req: any, res): Promise<void> => {
+router.post('/portal', requireAuth, async (req: any, res): Promise<void> => {
   try {
-    const userId = req.auth.userId as string;
+    const { userId } = getAuth(req);
     const user = await storage.getUser(userId);
 
     if (!user?.stripeCustomerId) {

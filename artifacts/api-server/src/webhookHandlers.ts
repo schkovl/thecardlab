@@ -29,19 +29,54 @@ export class WebhookHandlers {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as import('stripe').Stripe.Checkout.Session;
-        if (session.subscription && session.metadata?.userId) {
-          await storage.updateUserStripeInfo(session.metadata.userId, {
+        const userId = session.metadata?.userId;
+        if (!userId) {
+          logger.warn({ sessionId: session.id }, 'checkout.session.completed: missing userId in metadata');
+          break;
+        }
+        if (session.subscription) {
+          await storage.updateUserStripeInfo(userId, {
             stripeCustomerId: session.customer as string,
             stripeSubscriptionId: session.subscription as string,
+            subscriptionStatus: 'active',
           });
+          logger.info({ userId, subscriptionId: session.subscription }, 'Subscription linked to user and marked active');
         }
         break;
       }
-      case 'customer.subscription.deleted': {
+
+      case 'customer.subscription.updated': {
         const sub = event.data.object as import('stripe').Stripe.Subscription;
-        logger.info({ subscriptionId: sub.id }, 'Subscription deleted');
+        const userId = sub.metadata?.userId;
+        if (!userId) {
+          logger.warn({ subscriptionId: sub.id, customerId: sub.customer }, 'subscription.updated: no userId in metadata, skipping');
+          break;
+        }
+        const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000) : null;
+        await storage.updateUserStripeInfo(userId, {
+          subscriptionStatus: sub.status,
+          subscriptionPeriodEnd: periodEnd,
+        });
+        logger.info({ userId, subscriptionId: sub.id, status: sub.status }, 'Subscription status updated');
         break;
       }
+
+      case 'customer.subscription.deleted': {
+        const sub = event.data.object as import('stripe').Stripe.Subscription;
+        const userId = sub.metadata?.userId;
+        if (userId) {
+          await storage.updateUserStripeInfo(userId, {
+            stripeSubscriptionId: null,
+            subscriptionStatus: 'cancelled',
+            subscriptionPeriodEnd: null,
+          });
+          logger.info({ userId, subscriptionId: sub.id }, 'Subscription cancelled — cleared from user');
+        } else {
+          logger.warn({ subscriptionId: sub.id }, 'subscription.deleted: no userId in metadata');
+        }
+        break;
+      }
+
       default:
         break;
     }

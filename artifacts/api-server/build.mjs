@@ -60,11 +60,8 @@ async function buildAll() {
       "@mikro-orm/*",
       "@grpc/*",
       "@swc/*",
-      "@aws-sdk/*",
       "@azure/*",
-      "@opentelemetry/*",
-      "@google-cloud/*",
-      "@google/*",
+      // "@opentelemetry/*", // bundled — required by @sentry/node
       "googleapis",
       "firebase-admin",
       "@parcel/watcher",
@@ -101,7 +98,6 @@ async function buildAll() {
       "puppeteer-core",
       "electron",
       "stripe-replit-sync",
-      "stripe",
     ],
     sourcemap: "linked",
     plugins: [

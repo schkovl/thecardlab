@@ -1,8 +1,8 @@
 import { Router, type IRouter } from "express";
-import { openai } from "@workspace/integrations-openai-ai-server";
 import { fetchCardComps, fetchActiveListings, fetchRecentSoldPrices } from "../lib/ebay.js";
 import { cache } from "../lib/cache.js";
 import { logger } from "../lib/logger.js";
+import { getAIClient, extractJson } from "../lib/ai.js";
 
 const router: IRouter = Router();
 
@@ -206,19 +206,29 @@ Based on current sports news, player performance, and card market trends, return
   ]
 }`;
 
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      max_completion_tokens: 1024,
-      messages: [{ role: "user", content: prompt }],
-    });
-    const raw = completion.choices[0]?.message?.content ?? "{}";
-    let data: object;
-    try { data = JSON.parse(raw); } catch { data = buildFallbackPulse(wembyAvg, edwardsAvg); }
-    await cache.set(cacheKey, data, 10 * 60 * 1000);
-    res.json(data);
-  } catch (err) {
-    logger.warn({ err }, "GET /market/pulse AI unavailable, trying ESPN live data");
+  const aiClient = getAIClient();
+  if (aiClient) {
+    try {
+      const completion = await aiClient.chat.completions.create({
+        model: "gpt-4o-mini",
+        max_completion_tokens: 1024,
+        response_format: { type: "json_object" },
+        messages: [{ role: "user", content: prompt }],
+      });
+      const raw = completion.choices[0]?.message?.content ?? "{}";
+      let data: object;
+      try { data = JSON.parse(extractJson(raw)); } catch { data = buildFallbackPulse(wembyAvg, edwardsAvg); }
+      await cache.set(cacheKey, data, 10 * 60 * 1000);
+      res.json(data);
+      return;
+    } catch (err) {
+      logger.warn({ err }, "GET /market/pulse AI failed, trying ESPN live data");
+    }
+  } else {
+    logger.warn("GET /market/pulse no AI client configured, trying ESPN live data");
+  }
+
+  {
     const live = await buildLivePulse();
     if (live) {
       await cache.set(cacheKey, live, 10 * 60 * 1000);
@@ -271,28 +281,36 @@ Based on current sports season, recent game results, player news, and card marke
   ]
 }`;
 
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      max_completion_tokens: 512,
-      messages: [{ role: "user", content: prompt }],
-    });
-    const raw = completion.choices[0]?.message?.content ?? "{}";
-    let data: object;
-    try { data = JSON.parse(raw); } catch { data = FALLBACK_TRENDING; }
-    await cache.set(cacheKey, data, 30 * 60 * 1000);
-    res.json(data);
-  } catch (err) {
-    logger.warn({ err }, "GET /market/trending AI unavailable, trying ESPN live data");
-    const live = await buildLiveTrending();
-    if (live) {
-      await cache.set(cacheKey, live, 30 * 60 * 1000);
-      res.json(live);
+  const aiClientTrend = getAIClient();
+  if (aiClientTrend) {
+    try {
+      const completion = await aiClientTrend.chat.completions.create({
+        model: "gpt-4o-mini",
+        max_completion_tokens: 512,
+        response_format: { type: "json_object" },
+        messages: [{ role: "user", content: prompt }],
+      });
+      const raw = completion.choices[0]?.message?.content ?? "{}";
+      let data: object;
+      try { data = JSON.parse(extractJson(raw)); } catch { data = FALLBACK_TRENDING; }
+      await cache.set(cacheKey, data, 30 * 60 * 1000);
+      res.json(data);
       return;
+    } catch (err) {
+      logger.warn({ err }, "GET /market/trending AI failed, trying ESPN live data");
     }
-    await cache.set(cacheKey, FALLBACK_TRENDING, 30 * 60 * 1000);
-    res.json(FALLBACK_TRENDING);
+  } else {
+    logger.warn("GET /market/trending no AI client configured, trying ESPN live data");
   }
+
+  const live = await buildLiveTrending();
+  if (live) {
+    await cache.set(cacheKey, live, 30 * 60 * 1000);
+    res.json(live);
+    return;
+  }
+  await cache.set(cacheKey, FALLBACK_TRENDING, 30 * 60 * 1000);
+  res.json(FALLBACK_TRENDING);
 });
 
 // ─── GET /api/market/listings?q=QUERY ────────────────────────────────────────

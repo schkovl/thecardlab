@@ -81,19 +81,34 @@ export class Storage {
   }
 
   async upsertUser(id: string, email?: string) {
-    const [user] = await db
+    if (email !== undefined) {
+      const [user] = await db
+        .insert(users)
+        .values({ id, email })
+        .onConflictDoUpdate({ target: users.id, set: { email } })
+        .returning();
+      return user;
+    }
+    const [inserted] = await db
       .insert(users)
-      .values({ id, email })
-      .onConflictDoUpdate({ target: users.id, set: { email } })
+      .values({ id })
+      .onConflictDoNothing()
       .returning();
-    return user;
+    return inserted ?? this.getUser(id);
   }
 
   async updateUserStripeInfo(userId: string, stripeInfo: {
     stripeCustomerId?: string;
-    stripeSubscriptionId?: string;
+    stripeSubscriptionId?: string | null;
+    subscriptionStatus?: string | null;
+    subscriptionPeriodEnd?: Date | null;
   }) {
-    const [user] = await db.update(users).set(stripeInfo).where(eq(users.id, userId)).returning();
+    const set: Record<string, unknown> = {};
+    if (stripeInfo.stripeCustomerId !== undefined) set.stripeCustomerId = stripeInfo.stripeCustomerId;
+    if (stripeInfo.stripeSubscriptionId !== undefined) set.stripeSubscriptionId = stripeInfo.stripeSubscriptionId ?? null;
+    if (stripeInfo.subscriptionStatus !== undefined) set.subscriptionStatus = stripeInfo.subscriptionStatus ?? null;
+    if (stripeInfo.subscriptionPeriodEnd !== undefined) set.subscriptionPeriodEnd = stripeInfo.subscriptionPeriodEnd ?? null;
+    const [user] = await db.update(users).set(set).where(eq(users.id, userId)).returning();
     return user;
   }
 }
