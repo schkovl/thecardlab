@@ -1,10 +1,12 @@
 import { Shell } from "@/components/layout/Shell";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { Pill } from "@/components/cards/Pill";
-import { ClipboardList, Plus, X, Loader2, Pencil, CheckCircle2, Clock, Package, Truck } from "lucide-react";
+import { ClipboardList, Plus, X, Loader2, Pencil, CheckCircle2, Clock, Package, Truck, FlaskConical } from "lucide-react";
 import { useState } from "react";
 import { useUser } from "@clerk/react";
+import { Link } from "wouter";
 import { toast } from "sonner";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import {
   useListGradingSubmissions,
   useCreateGradingSubmission,
@@ -36,6 +38,7 @@ const STATUS_META: Record<Status, { label: string; color: "cyan" | "teal" | "vio
 const EMPTY_FORM = { cardName: "", grader: "PSA" as typeof GRADERS[number], serviceLevel: "Economy", declaredValue: "", submittedDate: "", notes: "" };
 
 export default function GradingTracker() {
+  usePageMeta("Grading Tracker — TheCardLab", "Track every card you send to PSA, BGS, SGC, and CGC — from submission date to cert number return.");
   const { isSignedIn, isLoaded } = useUser();
   const qc = useQueryClient();
 
@@ -129,21 +132,28 @@ export default function GradingTracker() {
 
   return (
     <Shell>
-      <div className="flex items-end justify-between mb-6">
+      <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
         <div>
           <div className="text-xs text-primary tracking-[0.16em] uppercase font-black mb-1">Submissions</div>
-          <h1 className="text-4xl font-display font-bold tracking-tight mb-2">Grading Tracker</h1>
+          <h1 className="text-2xl lg:text-4xl font-display font-bold tracking-tight mb-2">Grading Tracker</h1>
           <p className="text-muted-foreground text-sm max-w-2xl">
             Track every card you send to PSA, BGS, SGC, and CGC — from submission to cert number.
           </p>
         </div>
         {isSignedIn && (
-          <button
-            onClick={() => setShowAdd(true)}
-            className="h-10 px-5 rounded-xl bg-white/5 border border-border text-foreground font-bold hover:bg-white/10 transition-colors flex items-center gap-2"
-          >
-            <Plus size={16} /> Log Submission
-          </button>
+          <div className="flex items-center gap-2">
+            <Link href="/grade-lab">
+              <button className="h-10 px-4 rounded-xl bg-white/5 border border-border text-muted-foreground font-bold hover:bg-white/10 transition-colors flex items-center gap-2 text-sm">
+                <FlaskConical size={15} /> Grade Lab
+              </button>
+            </Link>
+            <button
+              onClick={() => setShowAdd(true)}
+              className="h-10 px-5 rounded-xl bg-white/5 border border-border text-foreground font-bold hover:bg-white/10 transition-colors flex items-center gap-2"
+            >
+              <Plus size={16} /> Log Submission
+            </button>
+          </div>
         )}
       </div>
 

@@ -1,10 +1,13 @@
 import { Shell } from "@/components/layout/Shell";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { Pill } from "@/components/cards/Pill";
-import { BookmarkPlus, Plus, X, Loader2, CheckCircle2, Pencil } from "lucide-react";
+import { BookmarkPlus, Plus, X, Loader2, CheckCircle2, Pencil, ScanLine } from "lucide-react";
 import { useState } from "react";
 import { useUser } from "@clerk/react";
+import { useLocation } from "wouter";
 import { toast } from "sonner";
+import { useCurrency } from "@/hooks/useCurrency";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import {
   useListWantlistItems,
   useCreateWantlistItem,
@@ -27,7 +30,10 @@ const PRIORITY_META: Record<Priority, { label: string; color: "cyan" | "teal" | 
 const EMPTY_FORM = { cardName: "", targetGrade: "PSA 9", maxPrice: "", priority: "medium" as Priority, notes: "" };
 
 export default function Wantlist() {
+  usePageMeta("Wantlist — TheCardLab", "Track the cards you're hunting with target grades and maximum buy prices. Never overpay again.");
   const { isSignedIn, isLoaded } = useUser();
+  const { fmt } = useCurrency();
+  const [, navigate] = useLocation();
   const qc = useQueryClient();
 
   const { data: items = [], isLoading } = useListWantlistItems({
@@ -137,7 +143,7 @@ export default function Wantlist() {
       <div className="flex items-end justify-between mb-6">
         <div>
           <div className="text-xs text-primary tracking-[0.16em] uppercase font-black mb-1">Collection</div>
-          <h1 className="text-4xl font-display font-bold tracking-tight mb-2">Wantlist</h1>
+          <h1 className="text-2xl lg:text-4xl font-display font-bold tracking-tight mb-2">Wantlist</h1>
           <p className="text-muted-foreground text-sm max-w-2xl">
             Track cards you're hunting with target grades and max buy prices. Never overpay again.
           </p>
@@ -237,12 +243,19 @@ export default function Wantlist() {
                             <td className="py-3 px-4">
                               <Pill variant="teal">{item.targetGrade}</Pill>
                             </td>
-                            <td className="py-3 px-4 text-right font-bold text-secondary">${item.maxPrice.toLocaleString()}</td>
+                            <td className="py-3 px-4 text-right font-bold text-secondary">{fmt(item.maxPrice)}</td>
                             <td className="py-3 px-4">
                               <Pill variant={pMeta.color}>{pMeta.label}</Pill>
                             </td>
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => navigate("/deal-screener")}
+                                  className="text-muted-foreground hover:text-primary transition-colors"
+                                  title="Check Deal Screener"
+                                >
+                                  <ScanLine size={14} />
+                                </button>
                                 <button
                                   onClick={() => markAcquired(item.id)}
                                   className="text-muted-foreground hover:text-secondary transition-colors"
@@ -287,7 +300,7 @@ export default function Wantlist() {
                         <tr key={item.id} className="hover:bg-white/5 transition-colors group opacity-60">
                           <td className="py-3 px-4 font-medium line-through">{item.cardName}</td>
                           <td className="py-3 px-4 text-muted-foreground">{item.targetGrade}</td>
-                          <td className="py-3 px-4 text-right text-muted-foreground">${item.maxPrice.toLocaleString()}</td>
+                          <td className="py-3 px-4 text-right text-muted-foreground">{fmt(item.maxPrice)}</td>
                           <td className="py-3 px-4">
                             <button
                               onClick={() => deleteMutation.mutate({ id: item.id })}
@@ -346,7 +359,7 @@ function WantlistForm({
           </select>
         </div>
         <div>
-          <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Max Buy Price ($) *</label>
+          <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Max Buy Price (USD) *</label>
           <input
             type="number" min="0"
             value={form.maxPrice}

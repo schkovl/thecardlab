@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Check, ShieldCheck, Tag, X } from "lucide-react";
 import { Link } from "wouter";
-import { openModal } from "@/lib/modal-bus";
 import { startCheckout } from "@/lib/checkout";
 import { toast } from "sonner";
-import { useUser } from "@clerk/react";
+import { useUser, useAuth } from "@clerk/react";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { MarketingNav } from "@/components/layout/MarketingNav";
 
 type Cycle = "monthly" | "yearly";
 
@@ -14,7 +15,7 @@ const tiers = [
     monthly: 0,
     yearly: 0,
     blurb: "Get started. No card required.",
-    features: ["3 Grade Lab scans / month", "Unlimited portfolio tracking", "Marketplace search", "Wantlist (3 cards)"],
+    features: ["3 Grade Lab scans / month", "5 Deal Screener scans / month", "Unlimited portfolio tracking", "Marketplace search", "Wantlist (3 cards)"],
     cta: "Start free",
     action: "free",
   },
@@ -24,7 +25,7 @@ const tiers = [
     yearly: 190,
     blurb: "For collectors and dealers.",
     features: ["Unlimited Grade Lab", "Deal Screener", "Grading Tracker", "Wantlist (unlimited)", "Priority support"],
-    cta: "Upgrade to Pro",
+    cta: "Get Started — $19/mo",
     highlight: true,
     action: "pro",
   },
@@ -33,16 +34,37 @@ const tiers = [
     monthly: 99,
     yearly: 990,
     blurb: "For investors and breakers.",
-    features: ["Everything in Pro", "Vault access ($25M insurance)", "API access", "Concierge submissions", "Dedicated support"],
+    features: ["Everything in Pro", "Global Vault access", "API access", "Concierge submissions", "Dedicated support"],
     cta: "Talk to sales",
     action: "whale",
   },
 ] as const;
 
 export default function Pricing() {
+  usePageMeta("Pricing — TheCardLab", "Free to start. Pro at $19/mo. Whale at $99/mo. Upgrade any time, cancel any time.");
   const [cycle, setCycle] = useState<Cycle>("monthly");
   const [loading, setLoading] = useState(false);
-  const { isSignedIn } = useUser();
+  const [couponOpen, setCouponOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const { isSignedIn, isLoaded } = useUser();
+  const { getToken } = useAuth();
+
+  // Auto-trigger checkout after sign-up/sign-in redirect
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    const params = new URLSearchParams(window.location.search);
+    const plan = params.get("checkout_plan") as "pro_monthly" | "pro_annual" | null;
+    if (!plan) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("checkout_plan");
+    window.history.replaceState({}, "", url.toString());
+    setLoading(true);
+    startCheckout(plan, undefined, getToken).then((result) => {
+      setLoading(false);
+      if (result.ok) window.location.assign(result.url);
+      else toast.error(result.message);
+    });
+  }, [isLoaded, isSignedIn, getToken]);
 
   const handleCta = async (action: string) => {
     if (action === "free") return;
@@ -50,28 +72,36 @@ export default function Pricing() {
       window.location.href = "/support";
       return;
     }
-    if (!isSignedIn) {
-      openModal("pricing");
+    const planId = cycle === "monthly" ? "pro_monthly" : "pro_annual";
+    if (!isLoaded || !isSignedIn) {
+      const returnUrl = `/pricing?checkout_plan=${planId}`;
+      window.location.href = `/sign-in?redirect_url=${encodeURIComponent(returnUrl)}`;
       return;
     }
     setLoading(true);
-    const planId = cycle === "monthly" ? "pro_monthly" : "pro_annual";
-    const result = await startCheckout(planId);
+    const couponId = couponCode.trim() || undefined;
+    const result = await startCheckout(planId, couponId, getToken);
     setLoading(false);
     if (result.ok) {
       window.location.assign(result.url);
     } else if (result.reason === "auth") {
-      openModal("pricing");
+      window.location.href = `/sign-in?redirect_url=${encodeURIComponent(`/pricing?checkout_plan=${planId}`)}`;
     } else {
       toast.error(result.message);
     }
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-12">
+    <div className="min-h-screen bg-background">
+      <MarketingNav />
+      <div className="mx-auto max-w-6xl px-6 py-12">
       <div className="text-center mb-8">
-        <h1 className="font-display text-4xl font-black mb-2">Simple pricing</h1>
+        <h1 className="font-display text-4xl font-black mb-2">Pricing Made Efficient</h1>
         <p className="text-sm text-muted-foreground">Free to start. Upgrade any time. Cancel anytime.</p>
+        <div className="flex items-center justify-center gap-2 mt-3">
+          <ShieldCheck size={14} className="text-primary/60" />
+          <span className="text-xs text-muted-foreground">14-day refund window · Email support@thecardlab.app · Cancel from settings</span>
+        </div>
 
         <div className="inline-flex items-center gap-1 mt-6 rounded-full bg-[#0d1a31] border border-border p-1">
           {(["monthly", "yearly"] as const).map((c) => (
@@ -83,6 +113,35 @@ export default function Pricing() {
               {c === "monthly" ? "Monthly" : "Yearly · save 17%"}
             </button>
           ))}
+        </div>
+
+        <div className="mt-4 flex justify-center">
+          {!couponOpen ? (
+            <button
+              onClick={() => setCouponOpen(true)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-white transition"
+            >
+              <Tag size={12} />
+              Have a promo code?
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 w-56">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder="PROMO CODE"
+                autoFocus
+                className="flex-1 h-9 px-3 rounded-xl bg-[#0d1a31] border border-border text-xs font-mono tracking-widest placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 transition text-center"
+              />
+              <button
+                onClick={() => { setCouponOpen(false); setCouponCode(""); }}
+                className="text-muted-foreground hover:text-white transition"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -125,6 +184,7 @@ export default function Pricing() {
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );

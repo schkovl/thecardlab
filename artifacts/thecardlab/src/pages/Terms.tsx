@@ -1,5 +1,11 @@
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { MarketingNav } from "@/components/layout/MarketingNav";
+
 export default function Terms() {
+  usePageMeta("Terms of Service — TheCardLab", "TheCardLab terms of service covering accounts, subscriptions, vault storage, acceptable use, and liability. Last updated 2026-05-17.");
   return (
+    <div className="min-h-screen bg-background">
+      <MarketingNav />
     <div className="mx-auto max-w-3xl px-6 py-12 text-foreground/90">
       <h1 className="font-display text-3xl font-black mb-2">Terms of Service</h1>
       <p className="text-xs text-muted-foreground mb-8">Last updated: 2026-05-17</p>
@@ -20,13 +26,13 @@ export default function Terms() {
 
       <Section title="4. Payment">
         Subscriptions billed monthly or annually via Stripe. Auto-renews unless cancelled before the
-        renewal date. Cancel anytime from <a className="text-primary hover:underline" href="/settings">Settings → Billing</a>.
-        Refunds at our discretion.
+        renewal date. Cancel anytime from your account settings or by emailing <a className="text-primary hover:underline" href="mailto:support@thecardlab.app">support@thecardlab.app</a>.
+        Refund requests submitted within 14 days of the charge may be approved; email <a className="text-primary hover:underline" href="mailto:support@thecardlab.app">support@thecardlab.app</a> to request one.
       </Section>
 
       <Section title="5. Vault">
-        Vault storage subject to a separate vault agreement, including insurance terms, withdrawal
-        timelines and intra-vault trade rules.
+        Vault storage is a premium feature available on the Whale plan. Specific terms, conditions,
+        and withdrawal timelines are provided separately upon vault onboarding.
       </Section>
 
       <Section title="6. Acceptable use">
@@ -42,8 +48,9 @@ export default function Terms() {
       </Section>
 
       <Section title="9. Contact">
-        legal@thecardlab.app
+        <a className="text-primary hover:underline" href="mailto:legal@thecardlab.app">legal@thecardlab.app</a>
       </Section>
+    </div>
     </div>
   );
 }

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Search, Mail, MessageCircle, BookOpen, ChevronDown } from "lucide-react";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { MarketingNav } from "@/components/layout/MarketingNav";
 
 const faqs = [
   {
     cat: "Getting started",
     items: [
-      { q: "How accurate is Grade Lab?", a: "Our model averages within 0.5 of the eventual PSA outcome on a held-out validation set. Accuracy is highest with sharp, well-lit images of modern cards." },
+      { q: "How accurate is Grade Lab?", a: "Grade Lab is designed to identify high-probability grade candidates. Results vary based on card condition, image quality, and set. Predictions are informational — not a guarantee of any PSA, BGS, SGC, or CGC outcome." },
       { q: "Which graders do you predict?", a: "PSA, BGS, SGC and CGC. We surface the most likely grade per company plus a confidence score." },
       { q: "Do you support Pokémon and soccer?", a: "Yes. Our training set spans baseball, basketball, football, hockey, soccer, Pokémon TCG and Magic: The Gathering." },
     ],
@@ -28,13 +30,14 @@ const faqs = [
   {
     cat: "Vault",
     items: [
-      { q: "How is the vault insured?", a: "Lloyd's of London policy up to $25M per parcel. Each card is photographed on intake." },
-      { q: "Are intra-vault trades taxed?", a: "Trades between vault accounts are not subject to sales tax in our operating jurisdiction. Consult your tax advisor." },
+      { q: "How does vault storage work?", a: "Vault is a premium feature for graded slabs on the Whale plan. Contact support@thecardlab.app for full details on storage, terms, and onboarding." },
+      { q: "How do I request vault access?", a: "Email support@thecardlab.app — our team will walk you through the vault onboarding process." },
     ],
   },
 ];
 
 export default function Support() {
+  usePageMeta("Help & Support — TheCardLab", "Get help with Grade Lab, Deal Screener, billing, account, and Global Vault. We typically reply within 24 hours.");
   const [query, setQuery] = useState("");
   const [openIdx, setOpenIdx] = useState<string | null>(null);
 
@@ -43,6 +46,8 @@ export default function Support() {
     : faqs;
 
   return (
+    <div className="min-h-screen bg-background">
+      <MarketingNav />
     <div className="mx-auto max-w-3xl px-6 py-12">
       <h1 className="font-display text-3xl font-black mb-2">Help & support</h1>
       <p className="text-sm text-muted-foreground mb-8">We typically reply within 24 hours.</p>
@@ -58,9 +63,9 @@ export default function Support() {
       </div>
 
       <div className="grid sm:grid-cols-3 gap-3 mb-8">
-        <ContactCard icon={Mail} label="Email" sub="support@thecardlab.app" href="mailto:support@thecardlab.app" />
-        <ContactCard icon={MessageCircle} label="Live chat" sub="Mon–Fri, 9-5 ET" href="#chat" />
-        <ContactCard icon={BookOpen} label="Docs" sub="thecardlab.app/docs" href="/docs" />
+        <ContactCard icon={Mail} label="Email support" sub="support@thecardlab.app" href="mailto:support@thecardlab.app" />
+        <ContactCard icon={MessageCircle} label="Billing & accounts" sub="billing@thecardlab.app" href="mailto:billing@thecardlab.app" />
+        <ContactCard icon={BookOpen} label="Legal & privacy" sub="legal@thecardlab.app" href="mailto:legal@thecardlab.app" />
       </div>
 
       {filtered.map((cat) => (
@@ -87,6 +92,7 @@ export default function Support() {
           </div>
         </div>
       ))}
+    </div>
     </div>
   );
 }

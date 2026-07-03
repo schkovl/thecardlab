@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
+import { getAuthToken } from "@workspace/api-client-react";
 
 export type SubscriptionStatus = {
   isPro: boolean;
@@ -35,9 +36,13 @@ export function useSubscription(): SubscriptionStatus {
       return;
     }
 
-    const base = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+    const base = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "https://api.thecardlab.app";
 
-    fetch(`${base}/api/me`, { credentials: "include" })
+    getAuthToken().then((token) => {
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return fetch(`${base}/api/me`, { headers, credentials: "include" });
+    })
       .then((res) => {
         if (!res.ok) throw new Error(`/api/me returned ${res.status}`);
         return res.json();

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@clerk/react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Crown, Check, Loader2, ShieldCheck } from "lucide-react";
+import { Crown, Check, Loader2, ShieldCheck, Tag, X } from "lucide-react";
 import { startCheckout, type PlanId } from "@/lib/checkout";
 import { invalidateSubscriptionCache } from "@/hooks/useSubscription";
 import { toast } from "sonner";
@@ -19,23 +20,26 @@ const PLANS: Array<{
   badge?: string;
   highlight?: boolean;
 }> = [
-  { id: "pro_monthly", name: "Pro Monthly", price: "$9.99", cadence: "/mo" },
-  { id: "pro_annual", name: "Pro Annual", price: "$95.88", cadence: "/yr", badge: "Save 20%", highlight: true },
+  { id: "pro_monthly", name: "Pro Monthly", price: "$19", cadence: "/mo" },
+  { id: "pro_annual", name: "Pro Annual", price: "$190", cadence: "/yr", badge: "Save 17%", highlight: true },
 ];
 
 const FEATURES = [
-  "Unlimited AI Deal Screener scans",
-  "Grade Lab front + back analysis",
-  "Real-time market alerts and price drops",
-  "Full Global Vault access with insurance",
-  "Tax-ready portfolio reports (PDF + CSV)",
-  "Priority access to grading partner discounts",
+  "Unlimited Grade Lab scans (front + back analysis)",
+  "Unlimited Deal Screener scans",
+  "Grading Tracker",
+  "Research & Alerts — real-time price drop notifications",
+  "Unlimited Wantlist",
+  "Priority support",
 ];
 
 export function PricingModal({ open, onOpenChange }: Props) {
   const [selected, setSelected] = useState<PlanId>("pro_annual");
   const [loading, setLoading] = useState(false);
+  const [couponOpen, setCouponOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
   const [location] = useLocation();
+  const { getToken } = useAuth();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -63,7 +67,8 @@ export function PricingModal({ open, onOpenChange }: Props) {
 
   const onCheckout = async () => {
     setLoading(true);
-    const result = await startCheckout(selected);
+    const couponId = couponCode.trim() || undefined;
+    const result = await startCheckout(selected, couponId, getToken);
     setLoading(false);
     if (result.ok) {
       window.location.assign(result.url);
@@ -91,7 +96,7 @@ export function PricingModal({ open, onOpenChange }: Props) {
           </div>
           <DialogTitle className="text-2xl font-black mt-4 tracking-tight">Upgrade to Pro</DialogTitle>
           <DialogDescription className="text-muted-foreground mt-1.5 text-sm">
-            Unlimited scans, full Vault, market alerts, and tax-ready reports.
+            Unlimited scans, market alerts, grading tracker, and priority support.
           </DialogDescription>
         </div>
 
@@ -142,6 +147,35 @@ export function PricingModal({ open, onOpenChange }: Props) {
           ))}
         </div>
 
+        <div className="px-6 pt-3 pb-1">
+          {!couponOpen ? (
+            <button
+              onClick={() => setCouponOpen(true)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-white transition"
+            >
+              <Tag size={12} />
+              Have a promo code?
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder="PROMO CODE"
+                autoFocus
+                className="flex-1 h-9 px-3 rounded-xl bg-white/5 border border-border text-xs font-mono tracking-widest placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 transition"
+              />
+              <button
+                onClick={() => { setCouponOpen(false); setCouponCode(""); }}
+                className="text-muted-foreground hover:text-white transition"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="p-6 pt-4 space-y-2">
           <button
             onClick={onCheckout}
@@ -154,7 +188,7 @@ export function PricingModal({ open, onOpenChange }: Props) {
                 <Loader2 size={16} className="animate-spin" /> Redirecting to checkout…
               </>
             ) : (
-              <>Start 14-Day Free Trial</>
+              <>Get Started</>
             )}
           </button>
           <button

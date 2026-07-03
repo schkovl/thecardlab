@@ -131,6 +131,12 @@
   --radius: 18px;
 }
 
+/* Clerk logo suppression — logoBox is rendered outside the card and causes duplicate branding */
+.cl-logoBox,
+.cl-logoImage {
+  display: none !important;
+}
+
 @layer base {
   * {
     @apply border-border;

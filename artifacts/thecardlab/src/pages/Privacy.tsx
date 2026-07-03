@@ -1,5 +1,11 @@
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { MarketingNav } from "@/components/layout/MarketingNav";
+
 export default function Privacy() {
+  usePageMeta("Privacy Policy — TheCardLab", "How TheCardLab collects, uses, stores, and protects your data. Last updated 2026-05-17.");
   return (
+    <div className="min-h-screen bg-background">
+      <MarketingNav />
     <div className="mx-auto max-w-3xl px-6 py-12 text-foreground/90">
       <h1 className="font-display text-3xl font-black mb-2">Privacy Policy</h1>
       <p className="text-xs text-muted-foreground mb-8">Last updated: 2026-05-17</p>
@@ -25,12 +31,13 @@ export default function Privacy() {
       </Section>
 
       <Section title="5. Your rights">
-        You can export, anonymize or delete your data at any time from <a className="text-primary hover:underline" href="/settings">Settings → Privacy</a> or by emailing <a className="text-primary hover:underline" href="mailto:privacy@thecardlab.app">privacy@thecardlab.app</a>.
+        You can export, anonymize or delete your data at any time by emailing <a className="text-primary hover:underline" href="mailto:privacy@thecardlab.app">privacy@thecardlab.app</a>. Account deletion is also available from your account settings.
       </Section>
 
       <Section title="6. Contact">
         TheCardLab, Inc. — <a className="text-primary hover:underline" href="mailto:privacy@thecardlab.app">privacy@thecardlab.app</a>
       </Section>
+    </div>
     </div>
   );
 }
