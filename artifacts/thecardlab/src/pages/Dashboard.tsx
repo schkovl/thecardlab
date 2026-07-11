@@ -4,7 +4,7 @@ import { HoloCard } from "@/components/cards/HoloCard";
 import { Pill } from "@/components/cards/Pill";
 import { Zap, ArrowRight, ScanLine, LayoutGrid, FlaskConical, Plus } from "lucide-react";
 import { Link } from "wouter";
-import { useUser } from "@clerk/react";
+import { useUser } from "@/lib/auth";
 import { useListPortfolioHoldings, getListPortfolioHoldingsQueryKey } from "@workspace/api-client-react";
 import { useMarketPulse } from "@/hooks/useMarketData";
 import { useCurrency } from "@/hooks/useCurrency";

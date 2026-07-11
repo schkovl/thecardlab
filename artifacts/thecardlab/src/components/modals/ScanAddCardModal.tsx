@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { X, Camera, Loader2, Upload, Sparkles, ChevronRight, RotateCcw, Check } from "lucide-react";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
 const API = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "https://api.thecardlab.app";

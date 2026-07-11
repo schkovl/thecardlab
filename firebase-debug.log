@@ -1,0 +1,61 @@
+[debug] [2026-06-05T08:37:54.879Z] ----------------------------------------------------------------------
+[debug] [2026-06-05T08:37:54.881Z] Command:       /opt/homebrew/Cellar/node/26.0.0/bin/node /opt/homebrew/bin/firebase projects:addfirebase thecardlab-prod
+[debug] [2026-06-05T08:37:54.881Z] CLI Version:   15.19.0
+[debug] [2026-06-05T08:37:54.881Z] Platform:      darwin
+[debug] [2026-06-05T08:37:54.881Z] Node Version:  v26.0.0
+[debug] [2026-06-05T08:37:54.881Z] Time:          Fri Jun 05 2026 04:37:54 GMT-0400 (Eastern Daylight Time)
+[debug] [2026-06-05T08:37:54.881Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-06-05T08:37:54.884Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-06-05T08:37:55.431Z] Running auto auth
+[debug] [2026-06-05T08:37:55.433Z] No OAuth tokens found
+[debug] [2026-06-05T08:37:55.434Z] >>> [apiv2][query] POST https://firebase.googleapis.com/v1beta1/projects/thecardlab-prod:addFirebase [none]
+[debug] [2026-06-05T08:37:55.835Z] <<< [apiv2][status] POST https://firebase.googleapis.com/v1beta1/projects/thecardlab-prod:addFirebase 403
+[debug] [2026-06-05T08:37:55.836Z] <<< [apiv2][body] POST https://firebase.googleapis.com/v1beta1/projects/thecardlab-prod:addFirebase {"error":{"code":403,"message":"The caller does not have permission","status":"PERMISSION_DENIED"}}
+[debug] [2026-06-05T08:37:55.837Z] Request to https://firebase.googleapis.com/v1beta1/projects/thecardlab-prod:addFirebase had HTTP Error: 403, The caller does not have permission
+[debug] [2026-06-05T08:37:55.838Z] FirebaseError: Request to https://firebase.googleapis.com/v1beta1/projects/thecardlab-prod:addFirebase had HTTP Error: 403, The caller does not have permission
+    at responseToError (/opt/homebrew/Cellar/firebase-cli/15.19.0/libexec/lib/node_modules/firebase-tools/lib/responseToError.js:53:12)
+    at RetryOperation._fn (/opt/homebrew/Cellar/firebase-cli/15.19.0/libexec/lib/node_modules/firebase-tools/lib/apiv2.js:333:77)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+[error] 
+[error] Error: Failed to add Firebase to Google Cloud Platform project. See firebase-debug.log for more info.
+[debug] [2026-06-05T08:38:07.908Z] ----------------------------------------------------------------------
+[debug] [2026-06-05T08:38:07.910Z] Command:       /opt/homebrew/Cellar/node/26.0.0/bin/node /opt/homebrew/bin/firebase projects:create thecardlab-2026 --display-name TheCardLab
+[debug] [2026-06-05T08:38:07.910Z] CLI Version:   15.19.0
+[debug] [2026-06-05T08:38:07.910Z] Platform:      darwin
+[debug] [2026-06-05T08:38:07.910Z] Node Version:  v26.0.0
+[debug] [2026-06-05T08:38:07.910Z] Time:          Fri Jun 05 2026 04:38:07 GMT-0400 (Eastern Daylight Time)
+[debug] [2026-06-05T08:38:07.910Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-06-05T08:38:07.914Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-06-05T08:38:08.476Z] Running auto auth
+[debug] [2026-06-05T08:38:08.479Z] No OAuth tokens found
+[debug] [2026-06-05T08:38:08.480Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects [none]
+[debug] [2026-06-05T08:38:08.480Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects {"projectId":"thecardlab-2026","name":"TheCardLab"}
+[debug] [2026-06-05T08:38:08.624Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects 200
+[debug] [2026-06-05T08:38:08.624Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects {"name":"operations/create_project.global.6198549862456510768"}
+[debug] [2026-06-05T08:38:08.625Z] No OAuth tokens found
+[debug] [2026-06-05T08:38:08.625Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/operations/create_project.global.6198549862456510768 [none]
+[debug] [2026-06-05T08:38:08.814Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/operations/create_project.global.6198549862456510768 200
+[debug] [2026-06-05T08:38:08.815Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/operations/create_project.global.6198549862456510768 {"name":"operations/create_project.global.6198549862456510768"}
+[debug] [2026-06-05T08:38:09.316Z] [Project Creation Poller] Retrying task index 0
+[debug] [2026-06-05T08:38:09.316Z] No OAuth tokens found
+[debug] [2026-06-05T08:38:09.316Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/operations/create_project.global.6198549862456510768 [none]
+[debug] [2026-06-05T08:38:09.391Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/operations/create_project.global.6198549862456510768 200
+[debug] [2026-06-05T08:38:09.391Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/operations/create_project.global.6198549862456510768 {"name":"operations/create_project.global.6198549862456510768"}
+[debug] [2026-06-05T08:38:10.392Z] [Project Creation Poller] Retrying task index 0
+[debug] [2026-06-05T08:38:10.393Z] No OAuth tokens found
+[debug] [2026-06-05T08:38:10.394Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/operations/create_project.global.6198549862456510768 [none]
+[debug] [2026-06-05T08:38:10.466Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/operations/create_project.global.6198549862456510768 200
+[debug] [2026-06-05T08:38:10.466Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/operations/create_project.global.6198549862456510768 {"name":"operations/create_project.global.6198549862456510768","metadata":{"@type":"type.googleapis.com/google.cloudresourcemanager.v1.ProjectCreationStatus","gettable":true,"ready":true},"done":true,"response":{"@type":"type.googleapis.com/google.cloudresourcemanager.v1.Project","projectNumber":"411085033711","projectId":"thecardlab-2026","lifecycleState":"ACTIVE","name":"TheCardLab","createTime":"2026-06-05T08:38:08.625Z"}}
+[debug] [2026-06-05T08:38:10.468Z] No OAuth tokens found
+[debug] [2026-06-05T08:38:10.468Z] >>> [apiv2][query] POST https://firebase.googleapis.com/v1beta1/projects/thecardlab-2026:addFirebase [none]
+[debug] [2026-06-05T08:38:11.223Z] <<< [apiv2][status] POST https://firebase.googleapis.com/v1beta1/projects/thecardlab-2026:addFirebase 403
+[debug] [2026-06-05T08:38:11.223Z] <<< [apiv2][body] POST https://firebase.googleapis.com/v1beta1/projects/thecardlab-2026:addFirebase {"error":{"code":403,"message":"The caller does not have permission","status":"PERMISSION_DENIED"}}
+[debug] [2026-06-05T08:38:11.224Z] Request to https://firebase.googleapis.com/v1beta1/projects/thecardlab-2026:addFirebase had HTTP Error: 403, The caller does not have permission
+[debug] [2026-06-05T08:38:11.225Z] FirebaseError: Request to https://firebase.googleapis.com/v1beta1/projects/thecardlab-2026:addFirebase had HTTP Error: 403, The caller does not have permission
+    at responseToError (/opt/homebrew/Cellar/firebase-cli/15.19.0/libexec/lib/node_modules/firebase-tools/lib/responseToError.js:53:12)
+    at RetryOperation._fn (/opt/homebrew/Cellar/firebase-cli/15.19.0/libexec/lib/node_modules/firebase-tools/lib/apiv2.js:333:77)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+[error] 
+[error] Error: Failed to add Firebase to Google Cloud Platform project. See firebase-debug.log for more info.

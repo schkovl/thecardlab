@@ -1,111 +1,51 @@
-import { useSignIn, useSignUp } from "@clerk/react";
 import { useState } from "react";
 import { useLocation } from "wouter";
-
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-const apiBase = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "https://api.thecardlab.app";
+import { useAuthActions, startOAuth } from "@/lib/auth";
 
 interface SignUpFormProps {
   signInUrl: string;
   redirectUrl: string;
 }
 
-function extractClerkError(err: unknown): string {
-  if (err && typeof err === "object") {
-    const e = err as Record<string, unknown>;
-    const errors = e.errors as Array<{ longMessage?: string; message?: string }> | undefined;
-    if (errors?.[0]) {
-      return errors[0].longMessage ?? errors[0].message ?? String(e.message ?? "OAuth failed.");
-    }
-    if (typeof e.message === "string") return e.message;
-  }
-  return "OAuth failed. Check browser console for details.";
-}
-
 export function SignUpForm({ signInUrl, redirectUrl }: SignUpFormProps) {
-  // v6 API: useSignIn returns { fetchStatus, signIn, errors }
-  const { fetchStatus: signInStatus, signIn } = useSignIn();
-  const { fetchStatus: signUpStatus, signUp } = useSignUp();
+  const { signUp } = useAuthActions();
   const [, setLocation] = useLocation();
 
-  const [form, setForm] = useState({ firstName: "", lastName: "", username: "", email: "", password: "" });
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
-
-  const signInReady = signInStatus === "idle" && signIn != null;
-  const signUpReady = signUpStatus === "idle" && signUp != null;
 
   function field(key: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
   }
 
-  async function handleOAuth(strategy: "oauth_google" | "oauth_microsoft") {
-    if (!signIn) return;
-    setOauthLoading(strategy);
+  function handleOAuth(provider: "google" | "microsoft") {
+    setOauthLoading(provider);
     setError("");
-    try {
-      // v6 API: signIn.sso() initiates OAuth redirect
-      const result = await (signIn as unknown as {
-        sso: (p: { strategy: string; redirectUrl: string; redirectCallbackUrl: string }) => Promise<{ error: { longMessage?: string; message?: string } | null }>;
-      }).sso({
-        strategy,
-        redirectUrl: `${window.location.origin}${basePath}/sso-callback`,
-        redirectCallbackUrl: `${window.location.origin}${redirectUrl}`,
-      });
-      if (result.error) {
-        setError(result.error.longMessage ?? result.error.message ?? "OAuth failed.");
-        setOauthLoading(null);
-      }
-      // no error → browser is navigating to OAuth provider
-    } catch (err: unknown) {
-      console.error("[OAuth sign-up error]", err);
-      setError(extractClerkError(err));
-      setOauthLoading(null);
-    }
+    startOAuth(provider, redirectUrl);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!signIn) return;
     setLoading(true);
     setError("");
 
     try {
-      // Server creates user via Clerk BAPI — no email verification required
-      const res = await fetch(`${apiBase}/api/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: form.firstName,
-          lastName: form.lastName,
-          username: form.username || undefined,
-          email: form.email,
-          password: form.password,
-        }),
+      await signUp({
+        email: form.email,
+        password: form.password,
+        firstName: form.firstName,
+        lastName: form.lastName,
       });
-
-      const data = await res.json() as { token?: string; error?: string };
-
-      if (!res.ok || !data.token) {
-        setError(data.error ?? "Sign up failed.");
-        return;
-      }
-
-      // v6 API: signIn.ticket() activates session automatically
-      const result = await (signIn as unknown as {
-        ticket: (p: { ticket: string }) => Promise<{ error: { longMessage?: string; message?: string } | null }>;
-      }).ticket({ ticket: data.token });
-
-      if (result.error) {
-        setError(result.error.longMessage ?? result.error.message ?? "Account created but login failed. Please sign in.");
-      } else {
-        setLocation(redirectUrl);
-      }
+      setLocation(redirectUrl);
     } catch (err: unknown) {
-      const clerkErr = err as { errors?: Array<{ longMessage?: string; message?: string }> };
-      setError(clerkErr.errors?.[0]?.longMessage ?? clerkErr.errors?.[0]?.message ?? "Sign up failed.");
+      setError(
+        err instanceof Error && err.message !== "Request failed"
+          ? err.message
+          : "Sign up failed.",
+      );
     } finally {
       setLoading(false);
     }
@@ -123,11 +63,11 @@ export function SignUpForm({ signInUrl, redirectUrl }: SignUpFormProps) {
         <div className="flex flex-col gap-3 mb-6">
           <button
             type="button"
-            onClick={() => handleOAuth("oauth_google")}
-            disabled={!signInReady || !!oauthLoading || loading}
+            onClick={() => handleOAuth("google")}
+            disabled={!!oauthLoading || loading}
             className="flex items-center justify-center gap-3 w-full border border-[#1e3a5f] bg-[#050914] hover:bg-[#0d1a31] text-[#e2e8f0] font-semibold rounded-xl px-4 py-3 transition-colors disabled:opacity-50"
           >
-            {oauthLoading === "oauth_google" ? (
+            {oauthLoading === "google" ? (
               <span className="w-5 h-5 border-2 border-[#e2e8f0] border-t-transparent rounded-full animate-spin" />
             ) : (
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -142,11 +82,11 @@ export function SignUpForm({ signInUrl, redirectUrl }: SignUpFormProps) {
 
           <button
             type="button"
-            onClick={() => handleOAuth("oauth_microsoft")}
-            disabled={!signInReady || !!oauthLoading || loading}
+            onClick={() => handleOAuth("microsoft")}
+            disabled={!!oauthLoading || loading}
             className="flex items-center justify-center gap-3 w-full border border-[#1e3a5f] bg-[#050914] hover:bg-[#0d1a31] text-[#e2e8f0] font-semibold rounded-xl px-4 py-3 transition-colors disabled:opacity-50"
           >
-            {oauthLoading === "oauth_microsoft" ? (
+            {oauthLoading === "microsoft" ? (
               <span className="w-5 h-5 border-2 border-[#e2e8f0] border-t-transparent rounded-full animate-spin" />
             ) : (
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -179,25 +119,20 @@ export function SignUpForm({ signInUrl, redirectUrl }: SignUpFormProps) {
           </div>
 
           <div>
-            <label className={labelClass}>Username</label>
-            <input type="text" value={form.username} onChange={field("username")} autoComplete="username" className={inputClass} placeholder="janedoe" />
-          </div>
-
-          <div>
             <label className={labelClass}>Email address</label>
             <input type="email" value={form.email} onChange={field("email")} required autoComplete="email" className={inputClass} placeholder="you@example.com" />
           </div>
 
           <div>
             <label className={labelClass}>Password</label>
-            <input type="password" value={form.password} onChange={field("password")} required autoComplete="new-password" className={inputClass} placeholder="••••••••" />
+            <input type="password" value={form.password} onChange={field("password")} required minLength={8} autoComplete="new-password" className={inputClass} placeholder="At least 8 characters" />
           </div>
 
           {error && <p className="text-[#ff4d61] text-sm">{error}</p>}
 
           <button
             type="submit"
-            disabled={!signInReady || loading || !!oauthLoading}
+            disabled={loading || !!oauthLoading}
             className="w-full bg-[#00e5ff] text-[#03111c] font-black rounded-xl py-3 shadow-[0_0_20px_rgba(0,229,255,0.3)] hover:bg-[#22d3a6] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading ? <span className="w-5 h-5 border-2 border-[#03111c] border-t-transparent rounded-full animate-spin" /> : "Create account"}

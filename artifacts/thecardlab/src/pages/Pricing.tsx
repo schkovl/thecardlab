@@ -3,7 +3,7 @@ import { Check, ShieldCheck, Tag, X } from "lucide-react";
 import { Link } from "wouter";
 import { startCheckout } from "@/lib/checkout";
 import { toast } from "sonner";
-import { useUser, useAuth } from "@clerk/react";
+import { useUser, useAuth } from "@/lib/auth";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { MarketingNav } from "@/components/layout/MarketingNav";
 

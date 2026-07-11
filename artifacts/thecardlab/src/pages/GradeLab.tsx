@@ -7,7 +7,7 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@/lib/auth";
 import { useCurrency } from "@/hooks/useCurrency";
 
 const API = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "https://api.thecardlab.app";

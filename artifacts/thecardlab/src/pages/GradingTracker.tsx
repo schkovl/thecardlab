@@ -3,7 +3,7 @@ import { HoloCard } from "@/components/cards/HoloCard";
 import { Pill } from "@/components/cards/Pill";
 import { ClipboardList, Plus, X, Loader2, Pencil, CheckCircle2, Clock, Package, Truck, FlaskConical } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useUser } from "@clerk/react";
+import { useUser } from "@/lib/auth";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { usePageMeta } from "@/hooks/usePageMeta";

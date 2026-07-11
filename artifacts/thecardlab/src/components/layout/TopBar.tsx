@@ -2,7 +2,7 @@ import { Search, Sparkles, Bell, Download, Check, LogIn, Menu, Settings, Crown, 
 import { useState, useRef, useEffect } from "react";
 import { openModal } from "@/lib/modal-bus";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
-import { useUser, useClerk } from "@clerk/react";
+import { useUser, useClerk } from "@/lib/auth";
 import { Link, useLocation } from "wouter";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useSubscription } from "@/hooks/useSubscription";

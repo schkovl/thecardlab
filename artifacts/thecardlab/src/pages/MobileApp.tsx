@@ -1,6 +1,6 @@
 import { Shell } from "@/components/layout/Shell";
 import { useListPortfolioHoldings, getListPortfolioHoldingsQueryKey } from "@workspace/api-client-react";
-import { useUser } from "@clerk/react";
+import { useUser } from "@/lib/auth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { usePageMeta } from "@/hooks/usePageMeta";
 

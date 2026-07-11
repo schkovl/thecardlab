@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Home, ScanLine, FlaskConical, LayoutGrid, Activity, ShoppingCart, ShieldCheck, LogIn, Crown, ClipboardList, BookmarkPlus, X, Zap, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { openModal } from "@/lib/modal-bus";
-import { useUser, useClerk, useAuth } from "@clerk/react";
+import { useUser, useClerk, useAuth } from "@/lib/auth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { openCustomerPortal } from "@/lib/checkout";
 import { toast } from "sonner";

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useUser, useClerk, useAuth } from "@clerk/react";
+import { useUser, useClerk, useAuth } from "@/lib/auth";
 import { Crown, CreditCard, LogOut, User, Palette, ExternalLink } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { openModal } from "@/lib/modal-bus";

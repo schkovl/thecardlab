@@ -2,7 +2,7 @@ import { Shell } from "@/components/layout/Shell";
 import { HoloCard } from "@/components/cards/HoloCard";
 import { Pill } from "@/components/cards/Pill";
 import { ShieldCheck, MapPin, Truck, Loader2, Lock, Crown, Info } from "lucide-react";
-import { useUser } from "@clerk/react";
+import { useUser } from "@/lib/auth";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { useListPortfolioHoldings, getListPortfolioHoldingsQueryKey } from "@workspace/api-client-react";
 import { Link } from "wouter";

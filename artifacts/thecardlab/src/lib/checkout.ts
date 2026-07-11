@@ -1,30 +1,24 @@
-import { getAuthToken } from "@workspace/api-client-react";
-
 export type PlanId = "pro_monthly" | "pro_annual";
+/** Kept for call-site compatibility; sessions ride the httpOnly cookie now. */
 export type TokenGetter = () => Promise<string | null>;
 
 export type CheckoutResult =
   | { ok: true; url: string }
   | { ok: false; reason: "auth" | "network" | "server"; message: string };
 
-async function resolveToken(getToken?: TokenGetter): Promise<string | null> {
-  if (getToken) {
-    try { return await getToken(); } catch { return null; }
-  }
-  return getAuthToken();
-}
+const base =
+  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
-async function authHeaders(getToken?: TokenGetter): Promise<Record<string, string>> {
-  const token = await resolveToken(getToken);
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-export async function startCheckout(plan: PlanId, couponId?: string, getToken?: TokenGetter): Promise<CheckoutResult> {
+export async function startCheckout(
+  plan: PlanId,
+  couponId?: string,
+  _getToken?: TokenGetter,
+): Promise<CheckoutResult> {
   try {
-    const base = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "https://api.thecardlab.app";
     const res = await fetch(`${base}/api/checkout`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...(await authHeaders(getToken)) },
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         plan,
         successUrl: `${window.location.origin}/?checkout=success`,
@@ -52,12 +46,15 @@ export async function startCheckout(plan: PlanId, couponId?: string, getToken?: 
   }
 }
 
-export async function openCustomerPortal(returnUrl?: string, getToken?: TokenGetter): Promise<CheckoutResult> {
+export async function openCustomerPortal(
+  returnUrl?: string,
+  _getToken?: TokenGetter,
+): Promise<CheckoutResult> {
   try {
-    const base = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "https://api.thecardlab.app";
     const res = await fetch(`${base}/api/portal`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...(await authHeaders(getToken)) },
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ returnUrl: returnUrl ?? window.location.href }),
     });
 

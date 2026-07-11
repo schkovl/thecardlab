@@ -4,7 +4,7 @@ import { Pill } from "@/components/cards/Pill";
 import { useState } from "react";
 import { Search, Zap, AlertTriangle, AlertCircle, Clock, Loader2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { useUser } from "@clerk/react";
+import { useUser } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { useCurrency } from "@/hooks/useCurrency";
 import { usePageMeta } from "@/hooks/usePageMeta";

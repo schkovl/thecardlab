@@ -1,13 +1,13 @@
-import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster as Sonner } from "sonner";
-import { ClerkProvider, SignIn, useAuth } from "@clerk/react";
-import { shadcn } from "@clerk/themes";
-import { useEffect, Suspense, lazy } from "react";
-import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
+import { Suspense, lazy } from "react";
+import { setBaseUrl } from "@workspace/api-client-react";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { AuthProvider } from "@/lib/auth";
+import { SignInForm } from "@/components/auth/SignInForm";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -38,78 +38,12 @@ const Settings     = lazy(() => import("@/pages/Settings"));
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
 
-// Wire api-client to the Fly.io API server
+// Same-origin by default: /api/* rides the platform rewrite to the API server
+// and the session cookie flows automatically.
 setBaseUrl(
-  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ??
-  "https://api.thecardlab.app"
+  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "",
 );
-
-function ApiAuthSync() {
-  const { getToken } = useAuth();
-  useEffect(() => {
-    setAuthTokenGetter(async () => {
-      try { return await getToken(); } catch { return null; }
-    });
-    return () => { setAuthTokenGetter(null); };
-  }, [getToken]);
-  return null;
-}
-
-function stripBase(path: string): string {
-  return basePath && path.startsWith(basePath)
-    ? path.slice(basePath.length) || "/"
-    : path;
-}
-
-const clerkAppearance = {
-  baseTheme: shadcn,
-  cssLayerName: "clerk",
-  options: {
-    logoPlacement: "none" as const,
-    socialButtonsVariant: "blockButton" as const,
-  },
-  variables: {
-    colorPrimary: "#00e5ff",
-    colorForeground: "#e2e8f0",
-    colorMutedForeground: "#64748b",
-    colorDanger: "#ff4d61",
-    colorBackground: "#0d1a31",
-    colorInput: "#050914",
-    colorInputForeground: "#e2e8f0",
-    colorNeutral: "#1e3a5f",
-    fontFamily: "'Space Grotesk', system-ui, sans-serif",
-    borderRadius: "14px",
-  },
-  elements: {
-    rootBox: "w-full flex justify-center",
-    cardBox: "bg-[#0d1a31] rounded-[22px] w-[440px] max-w-full overflow-hidden border border-[#1e3a5f]",
-    card: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    headerTitle: "text-white font-black tracking-tight",
-    headerSubtitle: "text-[#64748b]",
-    socialButtonsBlockButtonText: "text-[#e2e8f0] font-semibold",
-    formFieldLabel: "text-[#94a3b8] text-xs font-bold uppercase tracking-wide",
-    footerActionLink: "text-[#00e5ff] font-semibold",
-    footerActionText: "text-[#64748b]",
-    dividerText: "text-[#475569]",
-    identityPreviewEditButton: "text-[#00e5ff]",
-    formFieldSuccessText: "text-[#22d3a6]",
-    alertText: "text-[#e2e8f0]",
-    logoBox: { display: "none" },
-    logoImage: { display: "none" },
-    socialButtonsBlockButton: "!border !border-[#1e3a5f] !bg-[#050914] hover:!bg-[#0d1a31] !rounded-xl !font-semibold",
-    formButtonPrimary: "!bg-[#00e5ff] !text-[#03111c] !font-black hover:!bg-[#22d3a6] !rounded-xl !shadow-[0_0_20px_rgba(0,229,255,0.3)]",
-    formFieldInput: "!bg-[#050914] !border-[#1e3a5f] !text-[#e2e8f0] !rounded-xl",
-    footerAction: "!bg-transparent",
-    dividerLine: "!bg-[#1e3a5f]",
-    alert: "!bg-[#050914] !border-[#1e3a5f]",
-    otpCodeFieldInput: "!bg-[#050914] !border-[#1e3a5f] !text-white",
-    formFieldRow: "",
-    main: "",
-  },
-};
 
 function AuthShell({ children }: { children: React.ReactNode }) {
   return (
@@ -138,11 +72,9 @@ function SignInPage() {
   usePageMeta("Sign In — TheCardLab", "Sign in to TheCardLab — AI-powered sports card analytics.");
   return (
     <AuthShell>
-      <SignIn
-        routing="path"
-        path={`${basePath}/sign-in`}
+      <SignInForm
         signUpUrl={`${basePath}/sign-up`}
-        fallbackRedirectUrl={`${basePath}/dashboard`}
+        redirectUrl={`${basePath}/dashboard`}
       />
     </AuthShell>
   );
@@ -197,53 +129,21 @@ function Router() {
   );
 }
 
-function ClerkProviderWithRoutes() {
-  const [, setLocation] = useLocation();
-
-  return (
-    <ClerkProvider
-      publishableKey={clerkPubKey}
-      appearance={clerkAppearance}
-      signInUrl={`${basePath}/sign-in`}
-      signUpUrl={`${basePath}/sign-up`}
-      signInFallbackRedirectUrl={`${basePath}/dashboard`}
-      signUpFallbackRedirectUrl={`${basePath}/dashboard`}
-      localization={{
-        signIn: {
-          start: {
-            title: "Welcome back",
-            subtitle: "Sign in to TheCardLab",
-          },
-        },
-        signUp: {
-          start: {
-            title: "Create your account",
-            subtitle: "Join TheCardLab — AI-powered card intelligence",
-          },
-        },
-      }}
-      routerPush={(to) => setLocation(stripBase(to))}
-      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
-    >
-      <ApiAuthSync />
-      <CurrencyProvider>
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Router />
-            <ModalRoot />
-          </TooltipProvider>
-          <Toaster />
-          <Sonner theme="dark" position="bottom-center" />
-        </QueryClientProvider>
-      </CurrencyProvider>
-    </ClerkProvider>
-  );
-}
-
 function App() {
   return (
     <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
+      <AuthProvider>
+        <CurrencyProvider>
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <Router />
+              <ModalRoot />
+            </TooltipProvider>
+            <Toaster />
+            <Sonner theme="dark" position="bottom-center" />
+          </QueryClientProvider>
+        </CurrencyProvider>
+      </AuthProvider>
     </WouterRouter>
   );
 }

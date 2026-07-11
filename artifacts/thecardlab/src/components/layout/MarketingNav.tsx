@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { FlaskConical } from "lucide-react";
-import { SignInButton, useUser } from "@clerk/react";
+import { SignInButton, useUser } from "@/lib/auth";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 

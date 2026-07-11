@@ -3,7 +3,7 @@ import { HoloCard } from "@/components/cards/HoloCard";
 import { Pill } from "@/components/cards/Pill";
 import { BookmarkPlus, Plus, X, Loader2, CheckCircle2, Pencil, ScanLine } from "lucide-react";
 import { useState } from "react";
-import { useUser } from "@clerk/react";
+import { useUser } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useCurrency } from "@/hooks/useCurrency";

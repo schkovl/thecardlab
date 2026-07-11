@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { SignInButton, SignUpButton, useAuth } from "@clerk/react";
+import { SignInButton, SignUpButton, useAuth } from "@/lib/auth";
 import { Redirect, Link } from "wouter";
 import {
   FlaskConical, ScanLine, LayoutGrid, ShieldCheck, Zap, TrendingUp,

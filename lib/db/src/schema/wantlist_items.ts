@@ -9,6 +9,8 @@ export const wantlistItemsTable = pgTable("wantlist_items", {
   priority: text("priority").notNull().default("medium"),
   notes: text("notes"),
   acquired: boolean("acquired").notNull().default(false),
+  category: text("category").notNull().default("sports"),
+  subcategory: text("subcategory"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

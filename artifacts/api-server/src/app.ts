@@ -1,32 +1,15 @@
-import { Sentry } from "./instrument";
-import express, { type Express, type Request, type Response, type NextFunction } from "express";
+import express, { type Express } from "express";
 import cors from "cors";
-import helmet from "helmet";
-import compression from "compression";
-import rateLimit from "express-rate-limit";
+import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
-import { clerkMiddleware } from "@clerk/express";
-import { publishableKeyFromHost } from "@clerk/shared/keys";
+import { eq } from "drizzle-orm";
+import { db, usersTable } from "@workspace/db";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { WebhookHandlers } from "./webhookHandlers";
-import {
-  CLERK_PROXY_PATH,
-  clerkProxyMiddleware,
-  getClerkProxyHost,
-} from "./middlewares/clerkProxyMiddleware";
+import { devAuthMiddleware } from "./lib/auth";
+import { getStripe } from "./lib/stripe";
 
 const app: Express = express();
-
-app.set("trust proxy", 1);
-app.disable("x-powered-by");
-app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: "cross-origin" } }));
-app.use(compression());
-
-const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? "https://thecardlab.app,https://www.thecardlab.app")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
 
 app.use(
   pinoHttp({
@@ -48,87 +31,87 @@ app.use(
   }),
 );
 
-app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
+const IS_PROD_APP = process.env.NODE_ENV === "production";
+const corsOrigins = (process.env.CORS_ORIGINS ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+if (IS_PROD_APP && corsOrigins.length === 0) {
+  throw new Error("CORS_ORIGINS must be set in production (comma-separated allowed origins)");
+}
 
 app.use(
   cors({
     credentials: true,
-    origin: (origin, cb) => {
-      if (!origin) return cb(null, true);
-      if (process.env.NODE_ENV !== "production") return cb(null, true);
-      if (allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(new Error(`Origin ${origin} not allowed`));
-    },
+    origin: IS_PROD_APP ? corsOrigins : true,
   }),
 );
-
-const keyByAuth = (req: express.Request) => {
-  const auth = (req as unknown as { auth?: { userId?: string } }).auth;
-  return auth?.userId ?? req.ip ?? "anon";
-};
-
-const writeLimiter = rateLimit({
-  windowMs: 60_000,
-  limit: 120,
-  keyGenerator: keyByAuth,
-  standardHeaders: "draft-7",
-  legacyHeaders: false,
-});
-
-const aiLimiter = rateLimit({
-  windowMs: 60_000,
-  limit: 20,
-  keyGenerator: keyByAuth,
-  standardHeaders: "draft-7",
-  legacyHeaders: false,
-});
-
-const marketLimiter = rateLimit({
-  windowMs: 60_000,
-  limit: 30,
-  keyGenerator: keyByAuth,
-  standardHeaders: "draft-7",
-  legacyHeaders: false,
-});
-
-app.get("/api/healthz", (_req, res) => {
-  res.json({ status: "ok" });
-});
-
-app.use(
-  clerkMiddleware((req) => ({
-    publishableKey: publishableKeyFromHost(
-      getClerkProxyHost(req) ?? "",
-      process.env.CLERK_PUBLISHABLE_KEY,
-    ),
-  })),
-);
-
-app.use("/api/analyze-listing", aiLimiter);
-app.use("/api/market", marketLimiter);
-app.use(["/api/scans", "/api/grading-submissions", "/api/wantlist", "/api/portfolio"], (req, _res, next) =>
-  req.method === "GET" ? next() : writeLimiter(req, _res, next),
-);
+app.use(cookieParser());
+app.use(devAuthMiddleware);
 
 app.post(
   "/api/stripe/webhook",
   express.raw({ type: "application/json" }),
   async (req, res) => {
+    const stripe = getStripe();
+    const secret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!stripe || !secret) {
+      res.status(503).json({ error: "stripe webhook not configured" });
+      return;
+    }
     const signature = req.headers["stripe-signature"];
-
     if (!signature) {
       res.status(400).json({ error: "Missing stripe-signature" });
       return;
     }
-
     const sig = Array.isArray(signature) ? signature[0] : signature;
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(req.body as Buffer, sig, secret);
+    } catch (err) {
+      logger.warn({ err }, "stripe webhook signature failed");
+      res.status(400).json({ error: "invalid signature" });
+      return;
+    }
 
     try {
-      await WebhookHandlers.processWebhook(req.body as Buffer, sig);
+      switch (event.type) {
+        case "checkout.session.completed": {
+          const session = event.data.object;
+          const userId = (session.client_reference_id as string | null) ?? null;
+          const customerId = (session.customer as string | null) ?? null;
+          const subscriptionId = (session.subscription as string | null) ?? null;
+          if (userId) {
+            await db
+              .update(usersTable)
+              .set({
+                stripeCustomerId: customerId ?? undefined,
+                stripeSubscriptionId: subscriptionId ?? undefined,
+                devTier: "pro",
+              })
+              .where(eq(usersTable.id, userId));
+          }
+          break;
+        }
+        case "customer.subscription.updated":
+        case "customer.subscription.deleted":
+        case "customer.subscription.created": {
+          const sub = event.data.object as { id: string; customer: string; status: string };
+          const tier = ["active", "trialing", "past_due"].includes(sub.status) ? "pro" : null;
+          await db
+            .update(usersTable)
+            .set({ stripeSubscriptionId: sub.id, devTier: tier })
+            .where(eq(usersTable.stripeCustomerId, sub.customer));
+          break;
+        }
+        default:
+          logger.info({ type: event.type }, "stripe webhook (unhandled)");
+      }
       res.status(200).json({ received: true });
-    } catch (err: any) {
-      logger.error({ err }, "Stripe webhook error");
-      res.status(400).json({ error: "Webhook processing error" });
+    } catch (err) {
+      logger.error({ err, type: event.type }, "stripe webhook handler error");
+      res.status(500).json({ error: "webhook handler failed" });
     }
   }
 );
@@ -138,14 +121,15 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
 
-Sentry.setupExpressErrorHandler(app);
-
-// Global error handler — must have 4 params for Express to treat as error handler
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  logger.error({ err }, "Unhandled error");
-  if (res.headersSent) return;
-  res.status(500).json({ error: "Internal server error" });
-});
+import type { ErrorRequestHandler } from "express";
+const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+  if (err && typeof err === "object" && (err as { name?: string }).name === "ZodError") {
+    res.status(400).json({ error: "validation failed", issues: (err as { issues?: unknown }).issues });
+    return;
+  }
+  logger.error({ err }, "unhandled api error");
+  res.status(500).json({ error: "internal server error" });
+};
+app.use("/api", errorHandler);
 
 export default app;

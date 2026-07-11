@@ -1,8 +1,6 @@
-import { useSignIn, useClerk } from "@clerk/react";
 import { useState } from "react";
 import { useLocation } from "wouter";
-
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { useAuthActions, startOAuth } from "@/lib/auth";
 
 interface SignInFormProps {
   signUpUrl: string;
@@ -10,9 +8,7 @@ interface SignInFormProps {
 }
 
 export function SignInForm({ signUpUrl, redirectUrl }: SignInFormProps) {
-  // v6 API: useSignIn returns { fetchStatus, signIn, errors }
-  const { fetchStatus, signIn } = useSignIn();
-  const { setActive } = useClerk();
+  const { signIn } = useAuthActions();
   const [, setLocation] = useLocation();
 
   const [email, setEmail] = useState("");
@@ -21,67 +17,29 @@ export function SignInForm({ signUpUrl, redirectUrl }: SignInFormProps) {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
 
-  const ready = fetchStatus === "idle" && signIn != null;
-
   async function handlePasswordSignIn(e: React.FormEvent) {
     e.preventDefault();
-    if (!signIn) return;
     setLoading(true);
     setError("");
 
     try {
-      // v6 API: signIn.password() returns { error } and activates session automatically
-      const result = await (signIn as unknown as {
-        password: (p: { identifier: string; password: string }) => Promise<{ error: { longMessage?: string; message?: string } | null }>;
-      }).password({ identifier: email, password });
-
-      if (result.error) {
-        setError(result.error.longMessage ?? result.error.message ?? "Incorrect email or password.");
-      } else {
-        setLocation(redirectUrl);
-      }
+      await signIn(email, password);
+      setLocation(redirectUrl);
     } catch (err: unknown) {
-      const clerkErr = err as { errors?: Array<{ longMessage?: string; message?: string }> };
       setError(
-        clerkErr.errors?.[0]?.longMessage ??
-        clerkErr.errors?.[0]?.message ??
-        "Incorrect email or password."
+        err instanceof Error && err.message !== "Request failed"
+          ? err.message
+          : "Incorrect email or password.",
       );
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleOAuth(strategy: "oauth_google" | "oauth_microsoft") {
-    if (!signIn) return;
-    setOauthLoading(strategy);
+  function handleOAuth(provider: "google" | "microsoft") {
+    setOauthLoading(provider);
     setError("");
-
-    try {
-      // v6 API: signIn.sso() initiates OAuth redirect
-      const result = await (signIn as unknown as {
-        sso: (p: { strategy: string; redirectUrl: string; redirectCallbackUrl: string }) => Promise<{ error: { longMessage?: string; message?: string } | null }>;
-      }).sso({
-        strategy,
-        redirectUrl: `${window.location.origin}${basePath}/sso-callback`,
-        redirectCallbackUrl: `${window.location.origin}${redirectUrl}`,
-      });
-      if (result.error) {
-        setError(result.error.longMessage ?? result.error.message ?? "OAuth sign-in failed.");
-        setOauthLoading(null);
-      }
-      // no error → browser is navigating to OAuth provider
-    } catch (err: unknown) {
-      console.error("[OAuth sign-in error]", err);
-      const clerkErr = err as { errors?: Array<{ longMessage?: string; message?: string }>; message?: string };
-      setError(
-        clerkErr.errors?.[0]?.longMessage ??
-        clerkErr.errors?.[0]?.message ??
-        (typeof clerkErr.message === "string" ? clerkErr.message : null) ??
-        "OAuth sign-in failed."
-      );
-      setOauthLoading(null);
-    }
+    startOAuth(provider, redirectUrl);
   }
 
   return (
@@ -94,11 +52,11 @@ export function SignInForm({ signUpUrl, redirectUrl }: SignInFormProps) {
         <div className="flex flex-col gap-3 mb-6">
           <button
             type="button"
-            onClick={() => handleOAuth("oauth_google")}
-            disabled={!ready || !!oauthLoading || loading}
+            onClick={() => handleOAuth("google")}
+            disabled={!!oauthLoading || loading}
             className="flex items-center justify-center gap-3 w-full border border-[#1e3a5f] bg-[#050914] hover:bg-[#0d1a31] text-[#e2e8f0] font-semibold rounded-xl px-4 py-3 transition-colors disabled:opacity-50"
           >
-            {oauthLoading === "oauth_google" ? (
+            {oauthLoading === "google" ? (
               <span className="w-5 h-5 border-2 border-[#e2e8f0] border-t-transparent rounded-full animate-spin" />
             ) : (
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -113,11 +71,11 @@ export function SignInForm({ signUpUrl, redirectUrl }: SignInFormProps) {
 
           <button
             type="button"
-            onClick={() => handleOAuth("oauth_microsoft")}
-            disabled={!ready || !!oauthLoading || loading}
+            onClick={() => handleOAuth("microsoft")}
+            disabled={!!oauthLoading || loading}
             className="flex items-center justify-center gap-3 w-full border border-[#1e3a5f] bg-[#050914] hover:bg-[#0d1a31] text-[#e2e8f0] font-semibold rounded-xl px-4 py-3 transition-colors disabled:opacity-50"
           >
-            {oauthLoading === "oauth_microsoft" ? (
+            {oauthLoading === "microsoft" ? (
               <span className="w-5 h-5 border-2 border-[#e2e8f0] border-t-transparent rounded-full animate-spin" />
             ) : (
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -175,7 +133,7 @@ export function SignInForm({ signUpUrl, redirectUrl }: SignInFormProps) {
 
           <button
             type="submit"
-            disabled={!ready || loading || !!oauthLoading}
+            disabled={loading || !!oauthLoading}
             className="w-full bg-[#00e5ff] text-[#03111c] font-black rounded-xl py-3 shadow-[0_0_20px_rgba(0,229,255,0.3)] hover:bg-[#22d3a6] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading ? (
@@ -184,13 +142,7 @@ export function SignInForm({ signUpUrl, redirectUrl }: SignInFormProps) {
           </button>
         </form>
 
-        <div className="flex items-center justify-between mt-5 text-sm">
-          <a
-            href={`${basePath}/sign-in/forgot-password`}
-            className="text-[#64748b] hover:text-[#00e5ff] transition-colors"
-          >
-            Forgot password?
-          </a>
+        <div className="flex items-center justify-end mt-5 text-sm">
           <span className="text-[#64748b]">
             No account?{" "}
             <a href={signUpUrl} className="text-[#00e5ff] font-semibold hover:underline">

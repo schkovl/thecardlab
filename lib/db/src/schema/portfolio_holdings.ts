@@ -8,6 +8,8 @@ export const portfolioHoldingsTable = pgTable("portfolio_holdings", {
   cost: integer("cost").notNull(),
   value: integer("value").notNull(),
   purchaseDate: text("purchase_date"),
+  category: text("category").notNull().default("sports"),
+  subcategory: text("subcategory"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

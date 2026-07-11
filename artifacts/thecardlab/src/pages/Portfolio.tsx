@@ -5,7 +5,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import { ArrowUpRight, ArrowDownRight, Loader2, Trash2, X, Plus, Pencil } from "lucide-react";
 import { useState } from "react";
 import { ScanAddCardModal } from "@/components/modals/ScanAddCardModal";
-import { useUser } from "@clerk/react";
+import { useUser } from "@/lib/auth";
 import { toast } from "sonner";
 import { useCurrency } from "@/hooks/useCurrency";
 import { usePageMeta } from "@/hooks/usePageMeta";

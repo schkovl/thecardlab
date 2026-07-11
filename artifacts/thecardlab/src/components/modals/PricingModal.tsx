@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@/lib/auth";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Crown, Check, Loader2, ShieldCheck, Tag, X } from "lucide-react";
 import { startCheckout, type PlanId } from "@/lib/checkout";

@@ -19,6 +19,8 @@ export const scanResultsTable = pgTable("scan_results", {
   condition: jsonb("condition"),
   notes: jsonb("notes"),
   marketComps: jsonb("market_comps"),
+  category: text("category").notNull().default("sports"),
+  subcategory: text("subcategory"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

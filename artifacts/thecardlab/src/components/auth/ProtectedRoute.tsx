@@ -1,4 +1,4 @@
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@/lib/auth";
 import { Redirect } from "wouter";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
