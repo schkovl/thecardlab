@@ -22,8 +22,9 @@ step "local postgres"
 if [ ! -d "$PGDATA" ]; then
   initdb -D "$PGDATA" -A trust >/dev/null || fail "initdb"
 fi
-pg_ctl -D "$PGDATA" status >/dev/null 2>&1 || \
-  pg_ctl -D "$PGDATA" -o "-k $PGSOCK -p $PGPORT_LOCAL -c listen_addresses=''" -l /tmp/pg.log start >/dev/null || fail "pg start"
+pg_ctl -D "$PGDATA" stop -m fast >/dev/null 2>&1 || true
+pg_ctl -D "$PGDATA" -o "-k $PGSOCK -p $PGPORT_LOCAL -c listen_addresses=''" -l /tmp/pg.log start >/dev/null || fail "pg start"
+sleep 2
 psql -h "$PGSOCK" -p "$PGPORT_LOCAL" -U "$(whoami)" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" | grep -q 1 || \
   createdb -h "$PGSOCK" -p "$PGPORT_LOCAL" -U "$(whoami)" "$DB_NAME" || fail "createdb"
 echo "postgres up: $DB_NAME"
