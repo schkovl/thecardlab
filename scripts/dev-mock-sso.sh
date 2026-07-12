@@ -7,8 +7,10 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PGDATA="$HOME/.pgdata-tcl"
 PGSOCK="/tmp"
+PGPORT_LOCAL=5433
 DB_NAME="tcl_dev"
-export DATABASE_URL="postgresql://$(whoami)@localhost/$DB_NAME?host=$PGSOCK"
+export PGUSER="$(whoami)"   # Replit presets PGUSER=postgres; override it
+export DATABASE_URL="postgresql://$(whoami)@localhost:$PGPORT_LOCAL/$DB_NAME?host=$PGSOCK"
 API_PORT=8080
 API_LOG=/tmp/api.log
 VITE_LOG=/tmp/dev.log
@@ -21,9 +23,9 @@ if [ ! -d "$PGDATA" ]; then
   initdb -D "$PGDATA" -A trust >/dev/null || fail "initdb"
 fi
 pg_ctl -D "$PGDATA" status >/dev/null 2>&1 || \
-  pg_ctl -D "$PGDATA" -o "-k $PGSOCK -c listen_addresses=''" -l /tmp/pg.log start >/dev/null || fail "pg start"
-psql -h "$PGSOCK" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" | grep -q 1 || \
-  createdb -h "$PGSOCK" "$DB_NAME" || fail "createdb"
+  pg_ctl -D "$PGDATA" -o "-k $PGSOCK -p $PGPORT_LOCAL -c listen_addresses=''" -l /tmp/pg.log start >/dev/null || fail "pg start"
+psql -h "$PGSOCK" -p "$PGPORT_LOCAL" -U "$(whoami)" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" | grep -q 1 || \
+  createdb -h "$PGSOCK" -p "$PGPORT_LOCAL" -U "$(whoami)" "$DB_NAME" || fail "createdb"
 echo "postgres up: $DB_NAME"
 
 step "schema push (drizzle, local db only)"
