@@ -1,52 +1,26 @@
-modules = ["nodejs-24", "postgresql-16", "python-3.11"]
+modules = ["nodejs-24", "postgresql-16"]
 
-[deployment]
-router = "application"
-deploymentTarget = "autoscale"
-
-[deployment.postBuild]
-args = ["pnpm", "store", "prune"]
-env = { "CI" = "true" }
+# Dev workspace only. Production deploys run from GitHub Actions
+# (.github/workflows/api-deploy.yml -> Fly.io); do not deploy from Replit.
 
 [workflows]
-runButton = "Project"
+runButton = "Website Dev"
 
-[agent]
-stack = "PNPM_WORKSPACE"
-expertMode = true
+[[workflows.workflow]]
+name = "Website Dev"
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm --dir artifacts/thecardlab dev"
 
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
 
 [[ports]]
-localPort = 8080
-externalPort = 8080
-
-[[ports]]
-localPort = 8081
+localPort = 3000
 externalPort = 80
-
-[[ports]]
-localPort = 8082
-externalPort = 3003
-
-[[ports]]
-localPort = 22570
-externalPort = 3000
-
-[[ports]]
-localPort = 22754
-externalPort = 3001
-
-[[ports]]
-localPort = 22755
-externalPort = 3002
-
-[userenv]
-
-[userenv.shared]
-VITE_CLERK_PUBLISHABLE_KEY = "pk_test_bmVhdC1wZXJjaC0yMC5jbGVyay5hY2NvdW50cy5kZXYk"
 
 [nix]
 channel = "stable-25_05"
