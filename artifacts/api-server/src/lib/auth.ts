@@ -36,7 +36,14 @@ export function setAuthCookie(res: Response, token: string): void {
 }
 
 export function clearAuthCookie(res: Response): void {
-  res.clearCookie(COOKIE_NAME, { path: "/" });
+  // Attributes must match setAuthCookie exactly or browsers refuse to
+  // drop the original secure cookie and the "signed out" session lives on.
+  res.clearCookie(COOKIE_NAME, {
+    httpOnly: true,
+    sameSite: IS_PROD ? "strict" : "lax",
+    secure: IS_PROD,
+    path: "/",
+  });
 }
 
 export function getAuthCookie(req: Request): string | null {
