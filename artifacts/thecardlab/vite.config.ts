@@ -50,9 +50,11 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        target: "https://api.thecardlab.app",
+        // VITE_API_PROXY lets dev target a local API (e.g. mock OAuth)
+        // instead of production.
+        target: process.env.VITE_API_PROXY ?? "https://api.thecardlab.app",
         changeOrigin: true,
-        secure: true,
+        secure: !process.env.VITE_API_PROXY,
       },
     },
   },
