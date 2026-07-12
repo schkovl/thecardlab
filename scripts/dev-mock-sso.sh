@@ -39,6 +39,8 @@ pkill -f "dist/index.mjs" 2>/dev/null; sleep 1
 (cd "$ROOT/artifacts/api-server" && \
   NODE_ENV=development MOCK_OAUTH=1 PORT=$API_PORT \
   PUBLIC_BASE_URL="http://localhost:3000" DATABASE_URL="$DATABASE_URL" \
+  AI_INTEGRATIONS_OPENAI_BASE_URL="https://api.openai.com/v1" \
+  AI_INTEGRATIONS_OPENAI_API_KEY="dev-placeholder-not-a-real-key" \
   nohup node --enable-source-maps ./dist/index.mjs > "$API_LOG" 2>&1 &)
 for i in $(seq 1 20); do
   sleep 1
